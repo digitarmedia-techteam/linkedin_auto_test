@@ -1,0 +1,3 @@
+# This directory stores saved Playwright authentication state.
+# auth.json is excluded from Git to protect session tokens.
+# See .gitignore.

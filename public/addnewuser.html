@@ -1,0 +1,2336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LinkedIn Account Manager & Session Capture Studio</title>
+  <meta name="description" content="Register LinkedIn accounts and perform instant automated login to capture authentication cookies, secret tokens (li_at, JSESSIONID), and Playwright storage states.">
+  
+  <!-- Modern Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --bg-dark: #070a12;
+      --bg-card: rgba(15, 23, 42, 0.72);
+      --bg-card-hover: rgba(22, 33, 60, 0.85);
+      --bg-input: rgba(10, 16, 30, 0.85);
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-glow: rgba(10, 102, 194, 0.35);
+      --border-accent: rgba(56, 189, 248, 0.45);
+      
+      --linkedin-blue: #0a66c2;
+      --linkedin-hover: #004182;
+      --cyan-glow: #38bdf8;
+      --emerald: #10b981;
+      --emerald-glow: rgba(16, 185, 129, 0.2);
+      --rose: #f43f5e;
+      --amber: #f59e0b;
+      
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      
+      --font-heading: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      
+      --radius-sm: 8px;
+      --radius-md: 14px;
+      --radius-lg: 20px;
+      --radius-full: 9999px;
+      
+      --shadow-card: 0 10px 30px -10px rgba(0, 0, 0, 0.6);
+      --shadow-glow: 0 0 25px -5px rgba(10, 102, 194, 0.3);
+      --transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      background-image: 
+        radial-gradient(circle at 15% 15%, rgba(10, 102, 194, 0.15) 0%, transparent 45%),
+        radial-gradient(circle at 85% 85%, rgba(56, 189, 248, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 50% 50%, rgba(15, 23, 42, 0.5) 0%, transparent 100%);
+      background-attachment: fixed;
+      color: var(--text-main);
+      font-family: var(--font-body);
+      min-height: 100vh;
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      padding-bottom: 60px;
+    }
+
+    /* ── Layout & Container ────────────────────────────────────────── */
+    .app-container {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* ── Header ────────────────────────────────────────────────────── */
+    header {
+      padding: 20px 0;
+      border-bottom: 1px solid var(--border-subtle);
+      margin-bottom: 32px;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      backdrop-filter: blur(16px);
+      background: rgba(7, 10, 18, 0.85);
+    }
+
+    .header-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      text-decoration: none;
+    }
+
+    .brand-icon {
+      width: 42px;
+      height: 42px;
+      background: linear-gradient(135deg, #0a66c2 0%, #004182 100%);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-family: var(--font-heading);
+      font-weight: 800;
+      font-size: 22px;
+      box-shadow: 0 0 15px rgba(10, 102, 194, 0.4);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .brand-text h2 {
+      font-family: var(--font-heading);
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-main);
+      letter-spacing: -0.3px;
+    }
+
+    .brand-text span {
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      border-radius: var(--radius-full);
+      font-size: 12px;
+      font-weight: 600;
+      color: #34d399;
+    }
+
+    .pulse-dot {
+      width: 8px;
+      height: 8px;
+      background-color: #10b981;
+      border-radius: 50%;
+      box-shadow: 0 0 8px #10b981;
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      50% { transform: scale(1.2); opacity: 1; box-shadow: 0 0 12px #10b981; }
+      100% { transform: scale(0.95); opacity: 0.8; }
+    }
+
+    .nav-link-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      padding: 8px 14px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      font-weight: 500;
+      text-decoration: none;
+      transition: var(--transition);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .nav-link-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    /* ── Hero Banner ────────────────────────────────────────────────── */
+    .hero-banner {
+      margin-bottom: 32px;
+    }
+
+    .hero-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(10, 102, 194, 0.15);
+      border: 1px solid var(--border-glow);
+      color: var(--cyan-glow);
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+      padding: 4px 12px;
+      border-radius: var(--radius-full);
+      margin-bottom: 12px;
+    }
+
+    h1 {
+      font-family: var(--font-heading);
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: -0.8px;
+      line-height: 1.2;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+
+    .hero-desc {
+      font-size: 15px;
+      color: var(--text-muted);
+      max-width: 760px;
+    }
+
+    /* ── Main Grid ──────────────────────────────────────────────────── */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 460px 1fr;
+      gap: 28px;
+      align-items: start;
+    }
+
+    @media (max-width: 1024px) {
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* ── Glass Cards ────────────────────────────────────────────────── */
+    .glass-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      padding: 26px;
+      backdrop-filter: blur(20px);
+      box-shadow: var(--shadow-card);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .glass-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 22px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .card-title-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .card-title-group .icon {
+      font-size: 20px;
+    }
+
+    .card-title {
+      font-family: var(--font-heading);
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    /* ── Form Controls ──────────────────────────────────────────────── */
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-bottom: 8px;
+    }
+
+    .form-label span.req {
+      color: var(--rose);
+      margin-left: 2px;
+    }
+
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-icon {
+      position: absolute;
+      left: 14px;
+      color: var(--text-dim);
+      font-size: 16px;
+      pointer-events: none;
+    }
+
+    .form-input {
+      width: 100%;
+      background: var(--bg-input);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 12px 14px 12px 42px;
+      font-family: var(--font-body);
+      font-size: 14px;
+      color: var(--text-main);
+      outline: none;
+      transition: var(--transition);
+    }
+
+    .form-input:focus {
+      border-color: var(--linkedin-blue);
+      box-shadow: 0 0 0 3px rgba(10, 102, 194, 0.25);
+      background: rgba(15, 23, 42, 0.95);
+    }
+
+    .form-input::placeholder {
+      color: var(--text-dim);
+    }
+
+    .toggle-password {
+      position: absolute;
+      right: 12px;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 15px;
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition);
+    }
+
+    .toggle-password:hover {
+      color: var(--text-main);
+    }
+
+    .form-hint {
+      font-size: 11px;
+      color: var(--text-dim);
+      margin-top: 5px;
+    }
+
+    /* ── Collapsible Accordion ──────────────────────────────────────── */
+    .accordion-card {
+      background: rgba(10, 16, 30, 0.5);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      margin-bottom: 22px;
+      overflow: hidden;
+    }
+
+    .accordion-trigger {
+      width: 100%;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .accordion-trigger:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .accordion-arrow {
+      transition: transform 0.25s ease;
+      font-size: 12px;
+    }
+
+    .accordion-card.open .accordion-arrow {
+      transform: rotate(180deg);
+    }
+
+    .accordion-content {
+      padding: 0 16px 16px;
+      display: none;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .accordion-card.open .accordion-content {
+      display: block;
+      padding-top: 14px;
+    }
+
+    .toggle-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .toggle-label-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .toggle-label {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-main);
+    }
+
+    .toggle-sublabel {
+      font-size: 11px;
+      color: var(--text-dim);
+    }
+
+    /* Switch Component */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 44px;
+      height: 24px;
+      flex-shrink: 0;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(255, 255, 255, 0.15);
+      transition: .25s cubic-bezier(0.4, 0, 0.2, 1);
+      border-radius: 34px;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 2px;
+      bottom: 2px;
+      background-color: white;
+      transition: .25s cubic-bezier(0.4, 0, 0.2, 1);
+      border-radius: 50%;
+    }
+
+    input:checked + .slider {
+      background-color: var(--linkedin-blue);
+      border-color: rgba(56, 189, 248, 0.4);
+    }
+
+    input:checked + .slider:before {
+      transform: translateX(20px);
+    }
+
+    /* Small Switch & Row Control */
+    .switch-sm {
+      width: 38px;
+      height: 20px;
+    }
+
+    .switch-sm .slider:before {
+      height: 14px;
+      width: 14px;
+      left: 2px;
+      bottom: 2px;
+    }
+
+    .switch-sm input:checked + .slider:before {
+      transform: translateX(18px);
+    }
+
+    .login-try-control {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .btn-toggle-login-try {
+      background: transparent;
+      border: 1px solid transparent;
+      padding: 3px 9px;
+      border-radius: var(--radius-full);
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: var(--transition);
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .btn-toggle-login-try.active-cron {
+      background: rgba(16, 185, 129, 0.15);
+      border-color: rgba(16, 185, 129, 0.35);
+      color: #34d399;
+    }
+
+    .btn-toggle-login-try.active-cron:hover {
+      background: rgba(16, 185, 129, 0.25);
+      border-color: rgba(16, 185, 129, 0.5);
+    }
+
+    .btn-toggle-login-try.inactive-cron {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(255, 255, 255, 0.12);
+      color: var(--text-dim);
+    }
+
+    .btn-toggle-login-try.inactive-cron:hover {
+      background: rgba(255, 255, 255, 0.12);
+      color: var(--text-muted);
+    }
+
+    /* ── Action Buttons ─────────────────────────────────────────────── */
+    .button-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .btn {
+      padding: 13px 20px;
+      border-radius: var(--radius-md);
+      font-family: var(--font-heading);
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      transition: var(--transition);
+      border: none;
+      outline: none;
+      text-decoration: none;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      filter: grayscale(0.6);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #0a66c2 0%, #0284c7 100%);
+      color: white;
+      box-shadow: 0 4px 15px rgba(10, 102, 194, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: linear-gradient(135deg, #0077b5 0%, #0369a1 100%);
+      box-shadow: 0 6px 22px rgba(10, 102, 194, 0.55);
+      transform: translateY(-1px);
+    }
+
+    .btn-primary:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text-main);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.09);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-outline {
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 13px;
+      padding: 8px 12px;
+    }
+
+    .btn-outline:hover {
+      color: var(--text-main);
+    }
+
+    /* ── Right Column: Interactive Workspace ────────────────────────── */
+    .workspace-container {
+      min-height: 520px;
+    }
+
+    /* Empty Idle State */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 20px;
+      text-align: center;
+    }
+
+    .empty-illustration {
+      width: 76px;
+      height: 76px;
+      border-radius: 50%;
+      background: rgba(10, 102, 194, 0.1);
+      border: 1px dashed var(--border-glow);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      margin-bottom: 18px;
+      color: var(--cyan-glow);
+    }
+
+    .empty-title {
+      font-family: var(--font-heading);
+      font-size: 20px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .empty-subtitle {
+      font-size: 14px;
+      color: var(--text-muted);
+      max-width: 440px;
+      margin-bottom: 24px;
+    }
+
+    .feature-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    .pill {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid var(--border-subtle);
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+      font-size: 12px;
+      color: var(--text-muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Live Progress Stepper State */
+    .progress-state {
+      display: none;
+      padding: 24px;
+    }
+
+    .progress-card {
+      background: rgba(10, 16, 30, 0.85);
+      border: 1px solid var(--border-glow);
+      border-radius: var(--radius-md);
+      padding: 24px;
+      box-shadow: 0 0 25px rgba(10, 102, 194, 0.15);
+    }
+
+    .progress-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .spinner {
+      width: 22px;
+      height: 22px;
+      border: 3px solid rgba(56, 189, 248, 0.2);
+      border-top-color: var(--cyan-glow);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .stepper-list {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      position: relative;
+    }
+
+    .step-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      font-size: 14px;
+      color: var(--text-dim);
+      transition: var(--transition);
+    }
+
+    .step-icon {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      flex-shrink: 0;
+    }
+
+    .step-item.active {
+      color: var(--cyan-glow);
+      font-weight: 600;
+    }
+
+    .step-item.active .step-icon {
+      background: rgba(56, 189, 248, 0.15);
+      border-color: var(--cyan-glow);
+      color: var(--cyan-glow);
+      animation: pulse 1.5s infinite;
+    }
+
+    .step-item.done {
+      color: var(--emerald);
+    }
+
+    .step-item.done .step-icon {
+      background: rgba(16, 185, 129, 0.15);
+      border-color: var(--emerald);
+      color: var(--emerald);
+    }
+
+    /* Success Result State */
+    .result-state {
+      display: none;
+    }
+
+    .success-banner {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(6, 95, 70, 0.2) 100%);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      border-radius: var(--radius-md);
+      padding: 18px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+      box-shadow: 0 0 20px rgba(16, 185, 129, 0.15);
+    }
+
+    .success-text h3 {
+      font-family: var(--font-heading);
+      font-size: 17px;
+      font-weight: 700;
+      color: #34d399;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .success-text p {
+      font-size: 13px;
+      color: #a7f3d0;
+      margin-top: 2px;
+    }
+
+    /* Key Secret Tokens Highlight */
+    .secrets-showcase {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+
+    @media (max-width: 640px) {
+      .secrets-showcase {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .secret-box {
+      background: rgba(10, 16, 30, 0.75);
+      border: 1px solid var(--border-glow);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      position: relative;
+    }
+
+    .secret-box-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .secret-title {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--cyan-glow);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .copy-btn {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      border-radius: var(--radius-sm);
+      padding: 4px 8px;
+      font-size: 11px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: var(--transition);
+    }
+
+    .copy-btn:hover {
+      background: rgba(255, 255, 255, 0.18);
+      color: var(--text-main);
+    }
+
+    .secret-value-display {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      background: rgba(0, 0, 0, 0.4);
+      padding: 8px 10px;
+      border-radius: var(--radius-sm);
+      color: #e2e8f0;
+      word-break: break-all;
+      max-height: 52px;
+      overflow-y: auto;
+      border: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    /* Tabs Component */
+    .tabs-nav {
+      display: flex;
+      gap: 8px;
+      border-bottom: 1px solid var(--border-subtle);
+      margin-bottom: 18px;
+    }
+
+    .tab-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      padding: 10px 16px;
+      font-family: var(--font-heading);
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: var(--transition);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .tab-btn:hover {
+      color: var(--text-main);
+    }
+
+    .tab-btn.active {
+      color: var(--cyan-glow);
+      border-bottom-color: var(--cyan-glow);
+    }
+
+    .tab-panel {
+      display: none;
+    }
+
+    .tab-panel.active {
+      display: block;
+    }
+
+    /* Table Component */
+    .table-container {
+      max-height: 380px;
+      overflow-y: auto;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      text-align: left;
+    }
+
+    th {
+      background: rgba(15, 23, 42, 0.95);
+      color: var(--text-muted);
+      font-weight: 600;
+      padding: 10px 14px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    td {
+      padding: 10px 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      color: var(--text-main);
+    }
+
+    tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .mono-cell {
+      font-family: var(--font-mono);
+      font-size: 12px;
+    }
+
+    .tag-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: var(--radius-full);
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .tag-blue { background: rgba(10, 102, 194, 0.2); color: #60a5fa; }
+    .tag-green { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+    .tag-amber { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+    .tag-rose { background: rgba(244, 63, 94, 0.2); color: #f87171; }
+
+    /* Code Viewer */
+    .code-viewer-container {
+      position: relative;
+    }
+
+    .code-actions-bar {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+
+    pre.code-block {
+      background: #05070d;
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: #94a3b8;
+      max-height: 380px;
+      overflow: auto;
+      line-height: 1.6;
+    }
+
+    /* Error Banner */
+    .error-card {
+      display: none;
+      background: rgba(244, 63, 94, 0.1);
+      border: 1px solid rgba(244, 63, 94, 0.35);
+      border-radius: var(--radius-md);
+      padding: 16px 20px;
+      margin-bottom: 24px;
+      color: #fda4af;
+      font-size: 14px;
+    }
+
+    .error-card-title {
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+      color: #f43f5e;
+    }
+
+    /* ── Bottom Section: Registered Accounts ────────────────────────── */
+    .accounts-section {
+      margin-top: 48px;
+    }
+
+    .accounts-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 18px;
+    }
+
+    .accounts-title-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .accounts-title {
+      font-family: var(--font-heading);
+      font-size: 22px;
+      font-weight: 700;
+    }
+
+    .accounts-count-badge {
+      background: rgba(255, 255, 255, 0.08);
+      padding: 2px 10px;
+      border-radius: var(--radius-full);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--cyan-glow);
+    }
+
+    /* Toast Notification */
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #1e293b;
+      border: 1px solid var(--cyan-glow);
+      color: white;
+      padding: 12px 20px;
+      border-radius: var(--radius-md);
+      font-size: 14px;
+      font-weight: 500;
+      display: none;
+      align-items: center;
+      gap: 10px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+      z-index: 100;
+      animation: slideUp 0.3s ease;
+    }
+
+    @keyframes slideUp {
+    /* ── 2FA SMS Verification Modal ─────────────────────────────── */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(4, 7, 15, 0.85);
+      backdrop-filter: blur(12px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      padding: 20px;
+      animation: fadeIn 0.25s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .modal-card {
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid var(--border-accent);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.85), 0 0 35px rgba(56, 189, 248, 0.25);
+      border-radius: var(--radius-lg);
+      max-width: 480px;
+      width: 100%;
+      padding: 34px 28px;
+      text-align: center;
+      position: relative;
+      animation: scaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    @keyframes scaleUp {
+      from { transform: scale(0.92); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+
+    .modal-icon-badge {
+      width: 68px;
+      height: 68px;
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid var(--border-accent);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      margin: 0 auto 16px;
+      box-shadow: 0 0 22px rgba(56, 189, 248, 0.3);
+    }
+
+    .modal-title {
+      font-family: var(--font-heading);
+      font-size: 22px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 8px;
+    }
+
+    .modal-subtitle {
+      font-size: 14px;
+      color: var(--text-muted);
+      line-height: 1.5;
+      margin-bottom: 24px;
+    }
+
+    .modal-subtitle strong {
+      color: var(--cyan-glow);
+    }
+
+    .otp-inputs-group {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .otp-digit {
+      width: 52px;
+      height: 62px;
+      background: rgba(10, 16, 30, 0.95);
+      border: 1.5px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      font-family: var(--font-mono);
+      font-size: 24px;
+      font-weight: 700;
+      color: #ffffff;
+      text-align: center;
+      outline: none;
+      transition: var(--transition);
+    }
+
+    .otp-digit:focus {
+      border-color: var(--cyan-glow);
+      box-shadow: 0 0 16px rgba(56, 189, 248, 0.4);
+      background: rgba(15, 23, 42, 1);
+    }
+
+    .otp-error-msg {
+      background: rgba(244, 63, 94, 0.15);
+      border: 1px solid rgba(244, 63, 94, 0.35);
+      color: #fda4af;
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 13px;
+      margin-bottom: 18px;
+      text-align: left;
+    }
+
+    .modal-actions {
+      margin-top: 8px;
+    }
+
+    .modal-footer-hint {
+      font-size: 12px;
+      color: var(--text-dim);
+      margin-top: 16px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Toast Notification Container -->
+  <div id="toast">
+    <span id="toastIcon">📋</span>
+    <span id="toastMsg">Notification message</span>
+  </div>
+
+  <!-- ── 2FA SMS Verification Modal ────────────────────────────── -->
+  <div id="otpModal" class="modal-overlay" style="display: none;">
+    <div class="modal-card">
+      <div class="modal-icon-badge">📱</div>
+      <h3 class="modal-title">LinkedIn SMS Verification</h3>
+      <p class="modal-subtitle">
+        LinkedIn has requested SMS verification for <strong id="otpUsernameLabel">your account</strong>.<br>
+        Please enter the <strong>6-digit verification code</strong> sent to your phone (valid for 3 minutes):
+      </p>
+      
+      <div class="otp-inputs-group" id="otpDigitsContainer">
+        <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="otp-digit" data-idx="0" autocomplete="off">
+        <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="otp-digit" data-idx="1" autocomplete="off">
+        <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="otp-digit" data-idx="2" autocomplete="off">
+        <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="otp-digit" data-idx="3" autocomplete="off">
+        <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="otp-digit" data-idx="4" autocomplete="off">
+        <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" class="otp-digit" data-idx="5" autocomplete="off">
+      </div>
+
+      <div id="otpTimerDisplay" style="font-family: var(--font-mono); font-size: 13px; color: var(--cyan-glow); margin-bottom: 16px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px;">
+        <span>⏱️ Waiting for code:</span>
+        <span id="otpCountdown" style="background: rgba(56, 189, 248, 0.15); padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(56, 189, 248, 0.3);">03:00</span>
+      </div>
+
+      <div id="otpModalError" class="otp-error-msg" style="display: none;"></div>
+
+      <div class="modal-actions" style="display: flex; gap: 10px;">
+        <button type="button" class="btn btn-primary" id="btnSubmitOtp" style="flex: 1;">
+          <span id="btnSubmitOtpIcon">✓</span>
+          <span id="btnSubmitOtpText">Submit Code</span>
+        </button>
+        <button type="button" class="btn btn-secondary" id="btnCancelOtp" style="padding: 12px 16px;">
+          Cancel
+        </button>
+      </div>
+
+      <div class="modal-footer-hint">
+        ⚡ Playwright is paused on LinkedIn SMS challenge screen waiting for this code.
+      </div>
+    </div>
+  </div>
+
+  <!-- Main App Header -->
+  <header>
+    <div class="app-container header-inner">
+      <a href="/addnewuser" class="brand-group" id="navBrandLogo">
+        <div class="brand-icon">in</div>
+        <div class="brand-text">
+          <h2>LinkedIn Session Studio</h2>
+          <span>Automated Auth & Cookie Vault</span>
+        </div>
+      </a>
+
+      <div class="header-actions">
+        <div class="status-badge" id="serverStatusBadge">
+          <div class="pulse-dot"></div>
+          <span>Server Online</span>
+        </div>
+        <a href="/" target="_blank" class="nav-link-btn" id="linkApiDocs">
+          <span>⚡ API Docs</span>
+        </a>
+        <a href="/cron/login" target="_blank" class="nav-link-btn" id="linkTriggerCron">
+          <span>⏰ Cron Runner</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Page Content Container -->
+  <main class="app-container">
+    
+    <!-- Hero Title Section -->
+    <div class="hero-banner">
+      <div class="hero-tag">Automated Session Capture</div>
+      <h1>Add New LinkedIn User & Capture Session</h1>
+      <p class="hero-desc">
+        Register an account with username and password to trigger automated Playwright authentication. 
+        Instantly captures session cookies (<strong>li_at</strong>, <strong>JSESSIONID</strong> csrf), local storage, and storage state into the database.
+      </p>
+    </div>
+
+    <!-- Error Banner (shown if action fails) -->
+    <div class="error-card" id="globalErrorCard">
+      <div class="error-card-title">
+        <span>⚠️</span>
+        <span id="errorTitle">Authentication Failed</span>
+      </div>
+      <div id="errorBody">An unexpected error occurred during login.</div>
+    </div>
+
+    <!-- Main 2-Column Grid -->
+    <div class="main-grid">
+      
+      <!-- ── Column 1: Account Entry & Controls ────────────────────── -->
+      <section class="glass-card" aria-labelledby="formTitle">
+        <div class="card-header">
+          <div class="card-title-group">
+            <span class="icon">👤</span>
+            <h2 class="card-title" id="formTitle">Add Account Credentials</h2>
+          </div>
+          <button type="button" class="btn-outline" id="btnResetForm" title="Reset all input fields">Reset</button>
+        </div>
+
+        <form id="addUserForm" autocomplete="off">
+          
+          <!-- Username / Email Field -->
+          <div class="form-group">
+            <label class="form-label" for="username">
+              LinkedIn Email or Phone <span class="req">*</span>
+            </label>
+            <div class="input-wrapper">
+              <span class="input-icon">✉️</span>
+              <input 
+                type="text" 
+                id="username" 
+                name="username" 
+                class="form-input" 
+                placeholder="name@company.com or phone" 
+                required 
+                autofocus
+                autocomplete="off"
+              >
+            </div>
+            <div class="form-hint">Must match your LinkedIn login email or phone number.</div>
+          </div>
+
+          <!-- Password Field with Show/Hide Toggle -->
+          <div class="form-group">
+            <label class="form-label" for="password">
+              LinkedIn Password <span class="req">*</span>
+            </label>
+            <div class="input-wrapper">
+              <span class="input-icon">🔒</span>
+              <input 
+                type="password" 
+                id="password" 
+                name="password" 
+                class="form-input" 
+                placeholder="Account password" 
+                required
+                autocomplete="new-password"
+              >
+              <button type="button" class="toggle-password" id="btnTogglePassword" title="Show or hide password">
+                👁️
+              </button>
+            </div>
+            <div class="form-hint">Stored securely in MySQL for session renewal. Never logged in console.</div>
+          </div>
+
+          <!-- Account Tag / Role -->
+          <div class="form-group">
+            <label class="form-label" for="metaRole">
+              Account Role / Tag
+            </label>
+            <div class="input-wrapper">
+              <span class="input-icon">🏷️</span>
+              <input 
+                type="text" 
+                id="metaRole" 
+                name="metaRole" 
+                class="form-input" 
+                placeholder="e.g. primary_outreach, test_profile, sales" 
+              >
+            </div>
+          </div>
+
+          <!-- Advanced Settings Accordion -->
+          <div class="accordion-card" id="advancedAccordion">
+            <button type="button" class="accordion-trigger" id="btnToggleAccordion">
+              <span>⚙️ Advanced Automation Settings</span>
+              <span class="accordion-arrow">▼</span>
+            </button>
+            <div class="accordion-content">
+              
+              <!-- Login Try Switch -->
+              <div class="toggle-row">
+                <div class="toggle-label-group">
+                  <span class="toggle-label">Include in Public Cron (login_try = 1)</span>
+                  <span class="toggle-sublabel">Permits background scheduler to renew session</span>
+                </div>
+                <label class="switch">
+                  <input type="checkbox" id="switchLoginTry" checked>
+                  <span class="slider"></span>
+                </label>
+              </div>
+
+              <!-- Force Fresh Login Switch -->
+              <div class="toggle-row">
+                <div class="toggle-label-group">
+                  <span class="toggle-label">Force Fresh Login</span>
+                  <span class="toggle-sublabel">Bypasses existing session to submit fresh credentials</span>
+                </div>
+                <label class="switch">
+                  <input type="checkbox" id="switchForceFresh" checked>
+                  <span class="slider"></span>
+                </label>
+              </div>
+
+              <!-- Headless Mode Switch -->
+              <div class="toggle-row">
+                <div class="toggle-label-group">
+                  <span class="toggle-label">Headless Mode</span>
+                  <span class="toggle-sublabel">Turn OFF to see the browser and solve CAPTCHA if needed</span>
+                </div>
+                <label class="switch">
+                  <input type="checkbox" id="switchHeadless">
+                  <span class="slider"></span>
+                </label>
+              </div>
+
+              <!-- Status Dropdown -->
+              <div class="form-group" style="margin-top: 10px; margin-bottom: 0;">
+                <label class="form-label" for="userStatus">Initial Account Status</label>
+                <select id="userStatus" class="form-input" style="padding-left: 14px;">
+                  <option value="active" selected>Active</option>
+                  <option value="inactive">Inactive</option>
+                  <option value="checkpoint">Checkpoint / Verification Required</option>
+                </select>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Action Buttons Stack -->
+          <div class="button-stack">
+            <button type="button" class="btn btn-primary" id="btnAuthCapture">
+              <span id="btnAuthIcon">⚡</span>
+              <span id="btnAuthText">Login & Capture Session Details</span>
+            </button>
+
+            <button type="button" class="btn btn-secondary" id="btnSaveOnly">
+              <span>💾</span>
+              <span>Save User Only (No Immediate Login)</span>
+            </button>
+          </div>
+
+        </form>
+      </section>
+
+      <!-- ── Column 2: Interactive Workspace & Captured Details ─────── -->
+      <section class="glass-card workspace-container" aria-labelledby="workspaceTitle">
+        
+        <div class="card-header">
+          <div class="card-title-group">
+            <span class="icon">📦</span>
+            <h2 class="card-title" id="workspaceTitle">Session & Token Vault</h2>
+          </div>
+          <div id="resultMetaBadge"></div>
+        </div>
+
+        <!-- 1. Idle Empty State -->
+        <div class="empty-state" id="viewEmptyState">
+          <div class="empty-illustration">🔑</div>
+          <h3 class="empty-title">Ready for Authentication</h3>
+          <p class="empty-subtitle">
+            Enter your LinkedIn username and password on the left and click <strong>"Login & Capture Session Details"</strong>.
+            Playwright will authenticate the user and display extracted tokens here in real-time.
+          </p>
+          <div class="feature-pills">
+            <span class="pill">🍪 li_at Auth Cookie</span>
+            <span class="pill">🛡️ JSESSIONID CSRF Token</span>
+            <span class="pill">💾 Playwright Storage State</span>
+            <span class="pill">🗄️ MySQL loggedin_details</span>
+          </div>
+        </div>
+
+        <!-- 2. Live Progress Stepper State -->
+        <div class="progress-state" id="viewProgressState">
+          <div class="progress-card">
+            <div class="progress-header">
+              <div>
+                <h3 style="font-family: var(--font-heading); font-size: 16px; color: var(--cyan-glow); font-weight: 700;">
+                  Authentication in Progress...
+                </h3>
+                <span style="font-size: 12px; color: var(--text-muted);" id="progressSubtext">
+                  Launching isolated Playwright context
+                </span>
+              </div>
+              <div class="spinner"></div>
+            </div>
+
+            <ul class="stepper-list">
+              <li class="step-item active" id="step1">
+                <span class="step-icon">1</span>
+                <span>Upsert user record into database</span>
+              </li>
+              <li class="step-item" id="step2">
+                <span class="step-icon">2</span>
+                <span>Launch isolated Playwright Chromium instance</span>
+              </li>
+              <li class="step-item" id="step3">
+                <span class="step-icon">3</span>
+                <span>Navigate to LinkedIn & fill credentials</span>
+              </li>
+              <li class="step-item" id="step4">
+                <span class="step-icon">4</span>
+                <span>Wait for feed redirect & verify session</span>
+              </li>
+              <li class="step-item" id="step5">
+                <span class="step-icon">5</span>
+                <span>Extract cookies, tokens, and storage state</span>
+              </li>
+              <li class="step-item" id="step6">
+                <span class="step-icon">6</span>
+                <span>Persist all details to loggedin_details table</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- 3. Result State (Captured Details) -->
+        <div class="result-state" id="viewResultState">
+          
+          <!-- Banner -->
+          <div class="success-banner">
+            <div class="success-text">
+              <h3><span>🎉</span> <span id="resSuccessHeader">Session Successfully Captured!</span></h3>
+              <p id="resSuccessSub">User authenticated and all keys stored in database.</p>
+            </div>
+            <a href="#" target="_blank" class="nav-link-btn" id="btnViewUserJsonApi" style="background: rgba(0,0,0,0.3); border-color: rgba(16, 185, 129, 0.4);">
+              <span>🔍 View API Details</span>
+            </a>
+          </div>
+
+          <!-- Secret Tokens Highlight Card -->
+          <div class="secrets-showcase">
+            <!-- li_at Token -->
+            <div class="secret-box">
+              <div class="secret-box-header">
+                <span class="secret-title">🍪 li_at Session Token</span>
+                <button type="button" class="copy-btn" id="btnCopyLiAt" title="Copy li_at token">Copy</button>
+              </div>
+              <div class="secret-value-display mono-cell" id="displayLiAt">
+                Not found
+              </div>
+            </div>
+
+            <!-- JSESSIONID Token -->
+            <div class="secret-box">
+              <div class="secret-box-header">
+                <span class="secret-title">🛡️ JSESSIONID (CSRF)</span>
+                <button type="button" class="copy-btn" id="btnCopyCsrf" title="Copy CSRF token">Copy</button>
+              </div>
+              <div class="secret-value-display mono-cell" id="displayCsrf">
+                Not found
+              </div>
+            </div>
+          </div>
+
+          <!-- Tabbed Data Explorer -->
+          <div class="tabs-nav" role="tablist">
+            <button type="button" class="tab-btn active" data-tab="tabCookies">
+              <span>🍪 Cookies</span>
+              <span class="tag-badge tag-blue" id="badgeCookiesCount">0</span>
+            </button>
+            <button type="button" class="tab-btn" data-tab="tabStorageState">
+              <span>📦 Storage State JSON</span>
+            </button>
+            <button type="button" class="tab-btn" data-tab="tabDbDetails">
+              <span>🗄️ DB Records</span>
+              <span class="tag-badge tag-green" id="badgeDbCount">0</span>
+            </button>
+          </div>
+
+          <!-- Tab 1: Cookies Table -->
+          <div class="tab-panel active" id="tabCookies">
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Domain</th>
+                    <th>Value</th>
+                    <th>Expires</th>
+                    <th>Security</th>
+                  </tr>
+                </thead>
+                <tbody id="cookiesTableBody">
+                  <!-- Populated dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Tab 2: Storage State JSON -->
+          <div class="tab-panel" id="tabStorageState">
+            <div class="code-viewer-container">
+              <div class="code-actions-bar">
+                <button type="button" class="copy-btn" id="btnCopyStorageStateJson">Copy State JSON</button>
+                <button type="button" class="copy-btn" id="btnDownloadAuthJson">📥 Download auth.json</button>
+              </div>
+              <pre class="code-block" id="displayStorageStateJson">// Playwright storageState JSON will appear here</pre>
+            </div>
+          </div>
+
+          <!-- Tab 3: DB Records List -->
+          <div class="tab-panel" id="tabDbDetails">
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Category</th>
+                    <th>Key</th>
+                    <th>Value Preview</th>
+                    <th>Secret</th>
+                  </tr>
+                </thead>
+                <tbody id="dbDetailsTableBody">
+                  <!-- Populated dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+        </div>
+
+      </section>
+
+    </div>
+
+    <!-- ── Bottom Section: Registered Accounts Table ───────────────── -->
+    <section class="accounts-section">
+      <div class="accounts-header">
+        <div class="accounts-title-group">
+          <span style="font-size: 24px;">👥</span>
+          <h2 class="accounts-title">Registered Accounts in Database</h2>
+          <span class="accounts-count-badge" id="accountsCountBadge">0 accounts</span>
+        </div>
+        <button type="button" class="nav-link-btn" id="btnRefreshAccounts">
+          <span>🔄 Refresh List</span>
+        </button>
+      </div>
+
+      <div class="glass-card" style="padding: 0; overflow: hidden;">
+        <div class="table-container" style="max-height: 420px;">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Username</th>
+                <th>Cron Target</th>
+                <th>Status</th>
+                <th>Saved Session</th>
+                <th>Last Login</th>
+                <th>Attempts</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="accountsTableBody">
+              <tr>
+                <td colspan="8" style="text-align: center; color: var(--text-dim); padding: 24px;">
+                  Loading accounts from database...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    // ── Application State & Logic ────────────────────────────────────
+    let currentCapturedData = null;
+    let registeredUsers = [];
+
+    // Elements
+    const form = document.getElementById('addUserForm');
+    const inputUsername = document.getElementById('username');
+    const inputPassword = document.getElementById('password');
+    const inputMetaRole = document.getElementById('metaRole');
+    const switchLoginTry = document.getElementById('switchLoginTry');
+    const switchForceFresh = document.getElementById('switchForceFresh');
+    const switchHeadless = document.getElementById('switchHeadless');
+    const selectStatus = document.getElementById('userStatus');
+
+    const btnAuthCapture = document.getElementById('btnAuthCapture');
+    const btnSaveOnly = document.getElementById('btnSaveOnly');
+    const btnResetForm = document.getElementById('btnResetForm');
+    const btnTogglePassword = document.getElementById('btnTogglePassword');
+    const btnRefreshAccounts = document.getElementById('btnRefreshAccounts');
+
+    const viewEmptyState = document.getElementById('viewEmptyState');
+    const viewProgressState = document.getElementById('viewProgressState');
+    const viewResultState = document.getElementById('viewResultState');
+    const globalErrorCard = document.getElementById('globalErrorCard');
+    const errorTitle = document.getElementById('errorTitle');
+    const errorBody = document.getElementById('errorBody');
+
+    // ── Password Visibility Toggle ───────────────────────────────────
+    btnTogglePassword.addEventListener('click', () => {
+      const isPassword = inputPassword.getAttribute('type') === 'password';
+      inputPassword.setAttribute('type', isPassword ? 'text' : 'password');
+      btnTogglePassword.textContent = isPassword ? '🙈' : '👁️';
+    });
+
+    // ── Accordion Toggle ─────────────────────────────────────────────
+    const advancedAccordion = document.getElementById('advancedAccordion');
+    document.getElementById('btnToggleAccordion').addEventListener('click', () => {
+      advancedAccordion.classList.toggle('open');
+    });
+
+    // ── Tabs Switching ───────────────────────────────────────────────
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+
+        btn.classList.add('active');
+        const targetTabId = btn.getAttribute('data-tab');
+        const panel = document.getElementById(targetTabId);
+        if (panel) panel.classList.add('active');
+      });
+    });
+
+    // ── Toast Notification Helper ────────────────────────────────────
+    function showToast(message, icon = '📋') {
+      const toast = document.getElementById('toast');
+      document.getElementById('toastIcon').textContent = icon;
+      document.getElementById('toastMsg').textContent = message;
+      toast.style.display = 'flex';
+      setTimeout(() => {
+        toast.style.display = 'none';
+      }, 3500);
+    }
+
+    // ── Copy to Clipboard Helper ─────────────────────────────────────
+    async function copyToClipboard(text, label = 'Copied to clipboard!') {
+      try {
+        await navigator.clipboard.writeText(text);
+        showToast(label, '✅');
+      } catch (err) {
+        // Fallback
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        showToast(label, '✅');
+      }
+    }
+
+    // ── Error Helper ─────────────────────────────────────────────────
+    function showError(title, message) {
+      errorTitle.textContent = title;
+      errorBody.textContent = message;
+      globalErrorCard.style.display = 'block';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function hideError() {
+      globalErrorCard.style.display = 'none';
+    }
+
+    // ── View States ──────────────────────────────────────────────────
+    function setViewState(state) {
+      viewEmptyState.style.display = 'none';
+      viewProgressState.style.display = 'none';
+      viewResultState.style.display = 'none';
+
+      if (state === 'empty') viewEmptyState.style.display = 'flex';
+      if (state === 'progress') viewProgressState.style.display = 'block';
+      if (state === 'result') viewResultState.style.display = 'block';
+    }
+
+    // ── Stepper Animation Helper ─────────────────────────────────────
+    let stepInterval = null;
+    function startStepperSimulation() {
+      const steps = [
+        document.getElementById('step1'),
+        document.getElementById('step2'),
+        document.getElementById('step3'),
+        document.getElementById('step4'),
+        document.getElementById('step5'),
+        document.getElementById('step6'),
+      ];
+
+      steps.forEach((s, idx) => {
+        s.className = 'step-item' + (idx === 0 ? ' active' : '');
+      });
+
+      let currentStep = 0;
+      stepInterval = setInterval(() => {
+        if (currentStep < steps.length - 1) {
+          steps[currentStep].className = 'step-item done';
+          currentStep++;
+          steps[currentStep].className = 'step-item active';
+        }
+      }, 3500);
+    }
+
+    function stopStepperSimulation(isSuccess) {
+      if (stepInterval) clearInterval(stepInterval);
+      const steps = [
+        document.getElementById('step1'),
+        document.getElementById('step2'),
+        document.getElementById('step3'),
+        document.getElementById('step4'),
+        document.getElementById('step5'),
+        document.getElementById('step6'),
+      ];
+      steps.forEach(s => {
+        s.className = isSuccess ? 'step-item done' : 'step-item';
+      });
+    }
+
+    // ── 2FA SMS Verification Modal Controller ───────────────────────
+    const otpModal = document.getElementById('otpModal');
+    const btnSubmitOtp = document.getElementById('btnSubmitOtp');
+    const btnCancelOtp = document.getElementById('btnCancelOtp');
+    const otpModalError = document.getElementById('otpModalError');
+    const otpDigits = document.querySelectorAll('.otp-digit');
+    const otpUsernameLabel = document.getElementById('otpUsernameLabel');
+
+    let otpTimerInterval = null;
+
+    function openOtpModal(userLabel, expiresAt) {
+      if (otpModal.style.display === 'flex') {
+        // Modal is already open and active — do NOT reset digits or timer while user is typing
+        return;
+      }
+
+      otpUsernameLabel.textContent = userLabel || 'your LinkedIn account';
+      otpModalError.style.display = 'none';
+      otpDigits.forEach(d => { d.value = ''; d.disabled = false; });
+      btnSubmitOtp.disabled = false;
+      document.getElementById('btnSubmitOtpIcon').textContent = '✓';
+      document.getElementById('btnSubmitOtpText').textContent = 'Submit Code';
+      otpModal.style.display = 'flex';
+      setTimeout(() => otpDigits[0]?.focus(), 150);
+
+      // Start 3-minute (180 seconds) countdown
+      if (otpTimerInterval) clearInterval(otpTimerInterval);
+      let secondsLeft = 180;
+      if (expiresAt && typeof expiresAt === 'number') {
+        const diff = Math.round((expiresAt - Date.now()) / 1000);
+        if (diff > 0 && diff <= 300) {
+          secondsLeft = diff;
+        }
+      }
+
+      const countdownEl = document.getElementById('otpCountdown');
+      const updateDisplay = (secs) => {
+        const mins = String(Math.floor(secs / 60)).padStart(2, '0');
+        const s = String(secs % 60).padStart(2, '0');
+        if (countdownEl) countdownEl.textContent = `${mins}:${s}`;
+      };
+      updateDisplay(secondsLeft);
+
+      otpTimerInterval = setInterval(() => {
+        secondsLeft--;
+        if (secondsLeft <= 0) {
+          clearInterval(otpTimerInterval);
+          if (countdownEl) countdownEl.textContent = '00:00';
+          showOtpError('3 minutes elapsed. The OTP verification window has timed out.');
+          btnSubmitOtp.disabled = true;
+          return;
+        }
+        updateDisplay(secondsLeft);
+      }, 1000);
+    }
+
+    function closeOtpModal() {
+      if (otpTimerInterval) {
+        clearInterval(otpTimerInterval);
+        otpTimerInterval = null;
+      }
+      otpModal.style.display = 'none';
+    }
+
+    function showOtpError(msg) {
+      otpModalError.textContent = msg;
+      otpModalError.style.display = 'block';
+    }
+
+    btnCancelOtp.addEventListener('click', () => {
+      closeOtpModal();
+    });
+
+    // Handle typing and auto-advancing across 6 digit inputs
+    otpDigits.forEach((digitInput, idx) => {
+      digitInput.addEventListener('input', (e) => {
+        const val = e.target.value.replace(/[^0-9]/g, '');
+        e.target.value = val ? val.slice(-1) : '';
+        if (val && idx < otpDigits.length - 1) {
+          otpDigits[idx + 1].focus();
+        }
+        if (Array.from(otpDigits).every(d => d.value.length === 1)) {
+          btnSubmitOtp.click();
+        }
+      });
+
+      digitInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Backspace' && !e.target.value && idx > 0) {
+          otpDigits[idx - 1].focus();
+        } else if (e.key === 'Enter') {
+          btnSubmitOtp.click();
+        }
+      });
+
+      digitInput.addEventListener('paste', (e) => {
+        e.preventDefault();
+        const pasteData = (e.clipboardData || window.clipboardData).getData('text').replace(/[^0-9]/g, '');
+        if (!pasteData) return;
+        for (let i = 0; i < otpDigits.length; i++) {
+          otpDigits[i].value = pasteData[i] || '';
+        }
+        const nextIndex = Math.min(pasteData.length, otpDigits.length - 1);
+        otpDigits[nextIndex].focus();
+        if (pasteData.length >= 6) {
+          btnSubmitOtp.click();
+        }
+      });
+    });
+
+    // ── Action 1: Authenticate & Capture Details (/api/login) ─────────
+    btnAuthCapture.addEventListener('click', async () => {
+      hideError();
+      const username = inputUsername.value.trim();
+      const password = inputPassword.value;
+
+      if (!username || !password) {
+        showError('Validation Error', 'Please provide both LinkedIn Email/Phone and Password to authenticate.');
+        if (!username) inputUsername.focus();
+        else inputPassword.focus();
+        return;
+      }
+
+      // UI state: loading
+      btnAuthCapture.disabled = true;
+      btnSaveOnly.disabled = true;
+      document.getElementById('btnAuthIcon').textContent = '⏳';
+      document.getElementById('btnAuthText').textContent = 'Authenticating with LinkedIn...';
+      setViewState('progress');
+      startStepperSimulation();
+
+      // Configure OTP submit handler for this login session
+      btnSubmitOtp.onclick = async () => {
+        const code = Array.from(otpDigits).map(d => d.value).join('');
+        if (code.length < 4) {
+          showOtpError('Please enter the complete 6-digit verification code.');
+          return;
+        }
+
+        btnSubmitOtp.disabled = true;
+        document.getElementById('btnSubmitOtpIcon').textContent = '⏳';
+        document.getElementById('btnSubmitOtpText').textContent = 'Submitting code to LinkedIn...';
+        otpModalError.style.display = 'none';
+
+        try {
+          const submitRes = await fetch('/api/login/submit-otp', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, otp: code })
+          });
+          const submitData = await submitRes.json();
+          if (submitData.success) {
+            showToast('OTP submitted to browser session! Verifying...', '📱');
+            document.getElementById('btnSubmitOtpText').textContent = 'Verifying with LinkedIn...';
+            document.getElementById('progressSubtext').textContent = 'SMS code submitted to LinkedIn! Waiting for feed redirect...';
+          } else {
+            showOtpError(submitData.error || 'Failed to submit code. Try again.');
+            btnSubmitOtp.disabled = false;
+            document.getElementById('btnSubmitOtpIcon').textContent = '✓';
+            document.getElementById('btnSubmitOtpText').textContent = 'Submit Code';
+          }
+        } catch (err) {
+          showOtpError(err.message);
+          btnSubmitOtp.disabled = false;
+          document.getElementById('btnSubmitOtpIcon').textContent = '✓';
+          document.getElementById('btnSubmitOtpText').textContent = 'Submit Code';
+        }
+      };
+
+      // Poll for active 2FA SMS challenge while login is in flight
+      let challengePollInterval = setInterval(async () => {
+        try {
+          const cRes = await fetch(`/api/login/challenge?username=${encodeURIComponent(username)}`);
+          const cData = await cRes.json();
+          if (cData.active) {
+            openOtpModal(cData.username || username, cData.expiresAt);
+            document.getElementById('progressSubtext').textContent = 'SMS 2-step verification code requested. Please enter it in the popup modal.';
+          }
+        } catch (err) {}
+      }, 1200);
+
+      const payload = {
+        username,
+        password,
+        login_try: switchLoginTry.checked ? 1 : 0,
+        status: selectStatus.value,
+        forceFresh: switchForceFresh.checked,
+        headless: switchHeadless.checked,
+        meta_data: {
+          role: inputMetaRole.value.trim() || 'user',
+          source: 'addnewuser_page',
+          timestamp: new Date().toISOString()
+        }
+      };
+
+      try {
+        const response = await fetch('/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+        stopStepperSimulation(data.success);
+        closeOtpModal();
+
+        if (!data.success) {
+          showError('Authentication Failed', data.error || data.message || 'LinkedIn credentials rejected or security challenge triggered.');
+          setViewState('empty');
+          return;
+        }
+
+        // Render success data
+        currentCapturedData = data;
+        renderCapturedSession(data);
+        setViewState('result');
+        showToast('Login & Session Captured Successfully!', '🎉');
+        loadRegisteredAccounts(); // Refresh accounts list
+
+      } catch (err) {
+        stopStepperSimulation(false);
+        closeOtpModal();
+        showError('Network / Server Error', err.message);
+        setViewState('empty');
+      } finally {
+        clearInterval(challengePollInterval);
+        btnAuthCapture.disabled = false;
+        btnSaveOnly.disabled = false;
+        document.getElementById('btnAuthIcon').textContent = '⚡';
+        document.getElementById('btnAuthText').textContent = 'Login & Capture Session Details';
+      }
+    });
+
+    // ── Action 2: Save User Only (/api/users) ─────────────────────────
+    btnSaveOnly.addEventListener('click', async () => {
+      hideError();
+      const username = inputUsername.value.trim();
+      const password = inputPassword.value;
+
+      if (!username || !password) {
+        showError('Validation Error', 'Please provide both LinkedIn Email/Phone and Password to save user.');
+        return;
+      }
+
+      btnSaveOnly.disabled = true;
+      btnSaveOnly.textContent = 'Saving user...';
+
+      try {
+        const response = await fetch('/api/users', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username,
+            password,
+            login_try: switchLoginTry.checked ? 1 : 0,
+            status: selectStatus.value,
+            meta_data: {
+              role: inputMetaRole.value.trim() || 'user',
+              source: 'saved_without_login'
+            }
+          })
+        });
+
+        const result = await response.json();
+        if (result.success) {
+          showToast(`User ${username} saved successfully!`, '💾');
+          loadRegisteredAccounts();
+        } else {
+          showError('Save Failed', result.error || 'Could not save user.');
+        }
+      } catch (err) {
+        showError('Save Error', err.message);
+      } finally {
+        btnSaveOnly.disabled = false;
+        btnSaveOnly.innerHTML = '<span>💾</span> <span>Save User Only (No Immediate Login)</span>';
+      }
+    });
+
+    // ── Reset Form Action ────────────────────────────────────────────
+    btnResetForm.addEventListener('click', () => {
+      form.reset();
+      switchLoginTry.checked = true;
+      switchForceFresh.checked = true;
+      switchHeadless.checked = false;
+      inputUsername.focus();
+      hideError();
+    });
+
+    // ── Render Captured Details ──────────────────────────────────────
+    function renderCapturedSession(data) {
+      const { user, summary, secrets, details } = data;
+
+      // Update headers
+      document.getElementById('resSuccessHeader').textContent = `Authenticated: ${user.username}`;
+      document.getElementById('resSuccessSub').textContent = 
+        `User ID: #${user.id} • Status: ${user.status} • Total Items Captured: ${details.length}`;
+      document.getElementById('btnViewUserJsonApi').href = `/api/users/${user.id}/details`;
+
+      // Secret tokens
+      const liAt = secrets['secret:li_at'] || 'Not found';
+      const csrf = secrets['secret:csrf_token'] || 'Not found';
+      
+      document.getElementById('displayLiAt').textContent = liAt;
+      document.getElementById('displayCsrf').textContent = csrf;
+
+      document.getElementById('btnCopyLiAt').onclick = () => copyToClipboard(liAt, 'li_at cookie copied!');
+      document.getElementById('btnCopyCsrf').onclick = () => copyToClipboard(csrf, 'JSESSIONID (CSRF) token copied!');
+
+      // Tab 1: Cookies
+      const cookieRecords = details.filter(d => d.data_category === 'cookie');
+      document.getElementById('badgeCookiesCount').textContent = cookieRecords.length;
+      
+      const cookiesTbody = document.getElementById('cookiesTableBody');
+      cookiesTbody.innerHTML = '';
+      
+      if (cookieRecords.length === 0) {
+        cookiesTbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-dim);">No individual cookies recorded.</td></tr>';
+      } else {
+        cookieRecords.forEach(c => {
+          const tr = document.createElement('tr');
+          const isSecret = c.is_secret;
+          const meta = c.extra_metadata || {};
+          
+          tr.innerHTML = `
+            <td class="mono-cell" style="font-weight: 600; color: ${isSecret ? '#38bdf8' : '#f1f5f9'};">
+              ${escapeHtml(c.data_key.replace(/^cookie:/, ''))}
+              ${isSecret ? '<span class="tag-badge tag-blue" style="margin-left: 6px;">auth</span>' : ''}
+            </td>
+            <td class="mono-cell" style="color: var(--text-muted);">${escapeHtml(meta.domain || '-')}</td>
+            <td class="mono-cell" style="max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+              <span title="${escapeHtml(c.data_value || '')}">${escapeHtml(c.data_value ? (c.data_value.length > 40 ? c.data_value.substring(0, 40) + '...' : c.data_value) : '')}</span>
+            </td>
+            <td style="color: var(--text-dim); font-size: 11px;">
+              ${meta.expires ? (meta.expires === -1 ? 'Session' : new Date(meta.expires * 1000).toLocaleDateString()) : '-'}
+            </td>
+            <td>
+              ${meta.httpOnly ? '<span class="tag-badge tag-green">httpOnly</span>' : ''}
+              ${meta.secure ? '<span class="tag-badge tag-amber">secure</span>' : ''}
+            </td>
+          `;
+          cookiesTbody.appendChild(tr);
+        });
+      }
+
+      // Tab 2: Storage State JSON
+      const storageStateRecord = details.find(d => d.data_key === 'playwright_storage_state');
+      let rawJson = storageStateRecord ? storageStateRecord.data_value : '{}';
+      try {
+        const parsed = JSON.parse(rawJson);
+        rawJson = JSON.stringify(parsed, null, 2);
+      } catch {}
+
+      const displayStorageStateJson = document.getElementById('displayStorageStateJson');
+      displayStorageStateJson.textContent = rawJson;
+
+      document.getElementById('btnCopyStorageStateJson').onclick = () => {
+        copyToClipboard(rawJson, 'Playwright storageState copied!');
+      };
+
+      document.getElementById('btnDownloadAuthJson').onclick = () => {
+        const blob = new Blob([rawJson], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `auth_${user.username.replace(/[^a-zA-Z0-9]/g, '_')}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        showToast('Downloaded auth.json file!', '📥');
+      };
+
+      // Tab 3: Database Records
+      document.getElementById('badgeDbCount').textContent = details.length;
+      const dbTbody = document.getElementById('dbDetailsTableBody');
+      dbTbody.innerHTML = '';
+      
+      details.forEach(d => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><span class="tag-badge tag-blue">${escapeHtml(d.data_category)}</span></td>
+          <td class="mono-cell" style="font-weight: 600;">${escapeHtml(d.data_key)}</td>
+          <td class="mono-cell" style="max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+            <span title="${escapeHtml(d.data_value || '')}">${escapeHtml(d.data_value ? (d.data_value.length > 50 ? d.data_value.substring(0, 50) + '...' : d.data_value) : '')}</span>
+          </td>
+          <td>${d.is_secret ? '<span class="tag-badge tag-rose">YES</span>' : '<span style="color: var(--text-dim);">no</span>'}</td>
+        `;
+        dbTbody.appendChild(tr);
+      });
+    }
+
+    // ── Load Registered Test Accounts ────────────────────────────────
+    async function loadRegisteredAccounts() {
+      const tbody = document.getElementById('accountsTableBody');
+      const badge = document.getElementById('accountsCountBadge');
+
+      try {
+        const res = await fetch('/api/users');
+        const data = await res.json();
+
+        if (!data.success || !data.users) {
+          tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--rose);">Failed to load accounts.</td></tr>';
+          return;
+        }
+
+        registeredUsers = data.users;
+        badge.textContent = `${registeredUsers.length} account${registeredUsers.length === 1 ? '' : 's'}`;
+
+        if (registeredUsers.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--text-dim); padding: 24px;">No test users found in database. Add one above!</td></tr>';
+          return;
+        }
+
+        tbody.innerHTML = '';
+        registeredUsers.forEach(u => {
+          const tr = document.createElement('tr');
+          const lastLoginFormatted = u.last_login_at ? new Date(u.last_login_at).toLocaleString() : 'Never';
+          
+          tr.innerHTML = `
+            <td class="mono-cell" style="color: var(--text-dim); font-weight: 600;">#${u.id}</td>
+            <td style="font-weight: 600; color: #f8fafc;">${escapeHtml(u.username)}</td>
+            <td>
+              <div class="login-try-control">
+                <label class="switch switch-sm" title="Toggle login_try: 1 = Include in Cron, 0 = Exclude">
+                  <input type="checkbox" class="switch-login-try-row" data-userid="${u.id}" data-username="${escapeHtml(u.username)}" ${u.login_try === 1 ? 'checked' : ''}>
+                  <span class="slider"></span>
+                </label>
+                <button type="button" class="btn-toggle-login-try ${u.login_try === 1 ? 'active-cron' : 'inactive-cron'}" data-userid="${u.id}" data-username="${escapeHtml(u.username)}" data-target="${u.login_try === 1 ? 0 : 1}" title="Click to switch to login_try = ${u.login_try === 1 ? '0' : '1'}">
+                  ${u.login_try === 1 ? '✓ login_try = 1' : '✕ login_try = 0'}
+                </button>
+              </div>
+            </td>
+            <td>
+              <span class="tag-badge ${u.status === 'active' ? 'tag-green' : (u.status === 'checkpoint' ? 'tag-amber' : 'tag-rose')}">
+                ${escapeHtml(u.status)}
+              </span>
+            </td>
+            <td>
+              ${u.has_saved_session 
+                ? '<span class="tag-badge tag-blue">✓ Session Active</span>' 
+                : '<span style="color: var(--text-dim); font-size: 12px;">No session</span>'}
+            </td>
+            <td style="font-size: 12px; color: var(--text-muted);">${lastLoginFormatted}</td>
+            <td class="mono-cell" style="text-align: center;">${u.login_count}</td>
+            <td>
+              <div style="display: flex; gap: 8px;">
+                <button type="button" class="copy-btn btn-quick-login" data-username="${escapeHtml(u.username)}" title="Populate credentials form and login">
+                  ⚡ Login
+                </button>
+                <a href="/api/users/${u.id}/details" target="_blank" class="copy-btn" title="View details API JSON">
+                  🔍 API
+                </a>
+              </div>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+        // ── Toggle login_try Handlers (Switch & Button) ───────────────
+        async function updateLoginTry(userId, targetVal, username, triggerEl) {
+          if (triggerEl) triggerEl.disabled = true;
+          try {
+            const patchRes = await fetch(`/api/users/${userId}/login-try`, {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ login_try: targetVal })
+            });
+            const patchData = await patchRes.json();
+            if (patchData.success) {
+              showToast(`${username}: login_try set to ${targetVal} ${targetVal === 1 ? '(Active in Cron)' : '(Excluded)'}`, '⚙️');
+              loadRegisteredAccounts();
+            } else {
+              showError('Update Failed', patchData.error || 'Could not update login_try');
+              loadRegisteredAccounts();
+            }
+          } catch (err) {
+            showError('Network Error', err.message);
+            loadRegisteredAccounts();
+          }
+        }
+
+        document.querySelectorAll('.switch-login-try-row').forEach(sw => {
+          sw.addEventListener('change', (e) => {
+            const userId = sw.getAttribute('data-userid');
+            const username = sw.getAttribute('data-username');
+            const targetVal = e.target.checked ? 1 : 0;
+            updateLoginTry(userId, targetVal, username, sw);
+          });
+        });
+
+        document.querySelectorAll('.btn-toggle-login-try').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const userId = btn.getAttribute('data-userid');
+            const username = btn.getAttribute('data-username');
+            const targetVal = parseInt(btn.getAttribute('data-target'), 10);
+            updateLoginTry(userId, targetVal, username, btn);
+          });
+        });
+
+        // Quick login handlers
+        document.querySelectorAll('.btn-quick-login').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const username = btn.getAttribute('data-username');
+            inputUsername.value = username;
+            inputPassword.focus();
+            showToast(`Selected account: ${username}. Enter password to re-authenticate.`, 'ℹ️');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          });
+        });
+
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--rose);">Error loading accounts: ${err.message}</td></tr>`;
+      }
+    }
+
+    btnRefreshAccounts.addEventListener('click', () => {
+      loadRegisteredAccounts();
+      showToast('Accounts list refreshed', '🔄');
+    });
+
+    // Helper: Escape HTML
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    // Initial load
+    loadRegisteredAccounts();
+  </script>
+</body>
+</html>

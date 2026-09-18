@@ -1,0 +1,14 @@
+{
+  "profiles": [
+    {
+      "id": "test-profile-001",
+      "expectedName": "Test User One",
+      "expectedStatus": "Not Connected"
+    },
+    {
+      "id": "test-profile-002",
+      "expectedName": "Test User Two",
+      "expectedStatus": "Connected"
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+# ─── Runtime ─────────────────────────────────────────────────────────────────
+node_modules/
+dist/
+
+# ─── Playwright artifacts ─────────────────────────────────────────────────────
+test-results/
+playwright-report/
+
+# ─── Authentication state (NEVER commit — contains session tokens) ────────────
+storage/auth.json
+storage/*.json
+
+# ─── Reports ─────────────────────────────────────────────────────────────────
+reports/*.json
+reports/*.xml
+
+# ─── Screenshots / Videos / Traces ───────────────────────────────────────────
+screenshots/*.png
+screenshots/*.jpg
+*.webm
+*.zip
+
+# ─── Secrets ─────────────────────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+
+# ─── Editor / OS ─────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/settings.json
+*.log
