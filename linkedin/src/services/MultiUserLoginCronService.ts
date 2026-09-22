@@ -425,4 +425,131 @@ export const MultiUserLoginCronService = {
       await context.close();
     }
   },
+
+  /**
+   * Validates whether a user's stored session in the database is currently active and valid.
+   * Performs a fast timestamp check, and optionally a headless browser check against LinkedIn feed.
+   */
+  async validateUserSession(
+    user: LinkedInTestUser,
+    options?: { deepCheck?: boolean; headless?: boolean },
+  ): Promise<{
+    isValid: boolean;
+    reason?: string;
+    user: LinkedInTestUser;
+    sessionMeta?: {
+      cookiesCount: number;
+      liAtExpires?: number | null;
+      lastLoginAt?: Date | null;
+    };
+  }> {
+    if (!user.storage_state_json) {
+      return { isValid: false, reason: 'no_stored_session', user };
+    }
+
+    let parsedState: StorageStateData;
+    try {
+      parsedState = JSON.parse(user.storage_state_json) as StorageStateData;
+    } catch {
+      return { isValid: false, reason: 'corrupted_session_json', user };
+    }
+
+    const cookies = parsedState.cookies ?? [];
+    const liAt = cookies.find((c) => c.name === 'li_at');
+    if (!liAt || !liAt.value) {
+      return { isValid: false, reason: 'missing_li_at_token', user };
+    }
+
+    // Fast check: cookie expiration timestamp
+    if (typeof liAt.expires === 'number' && liAt.expires > 0) {
+      const nowSeconds = Math.floor(Date.now() / 1000);
+      if (liAt.expires <= nowSeconds) {
+        logger.info(`[CronService] [User ${String(user.id)}] Stored li_at token expired at ${new Date(liAt.expires * 1000).toISOString()}`);
+        await TestUserRepository.updateSessionStatus(user.id, 'expired', 'Session cookie has expired');
+        return { isValid: false, reason: 'session_cookie_expired', user };
+      }
+    }
+
+    // If deepCheck is false, fast check passed
+    if (options?.deepCheck === false) {
+      return {
+        isValid: true,
+        user,
+        sessionMeta: {
+          cookiesCount: cookies.length,
+          liAtExpires: liAt.expires ?? null,
+          lastLoginAt: user.last_login_at,
+        },
+      };
+    }
+
+    // Deep check: launch lightweight headless context to confirm feed redirect
+    logger.info(`[CronService] [User ${String(user.id)}] Performing deep session validation on LinkedIn feed...`);
+    const browser = await chromium.launch({
+      headless: options?.headless !== undefined ? options.headless : true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    });
+
+    try {
+      const context = await browser.newContext({
+        baseURL: config.baseUrl,
+        userAgent: user.user_agent ?? undefined,
+      });
+      await context.addCookies(cookies);
+
+      const page = await context.newPage();
+      const feedPage = new FeedPage(page);
+
+      await page.goto('/feed', { waitUntil: 'domcontentloaded', timeout: 25_000 });
+      await Promise.race([
+        page.waitForURL('**/feed/**', { timeout: 8_000 }).catch(() => null),
+        feedPage.assertIsVisible().catch(() => null),
+      ]);
+
+      const currentUrl = page.url();
+      const feedVisible = await feedPage.isVisible();
+
+      if (currentUrl.includes('/checkpoint') || currentUrl.includes('/challenge')) {
+        logger.warn(`[CronService] [User ${String(user.id)}] Security checkpoint encountered during validation`);
+        await TestUserRepository.updateSessionStatus(user.id, 'checkpoint', 'Security challenge or checkpoint detected');
+        await context.close();
+        return { isValid: false, reason: 'checkpoint', user };
+      }
+
+      if (
+        currentUrl.includes('/login') ||
+        currentUrl.includes('/authwall') ||
+        currentUrl.includes('/uas/login') ||
+        currentUrl.includes('/signup')
+      ) {
+        logger.info(`[CronService] [User ${String(user.id)}] LinkedIn redirected to login — session invalid/expired`);
+        await TestUserRepository.updateSessionStatus(user.id, 'expired', 'Session invalidated by LinkedIn');
+        await context.close();
+        return { isValid: false, reason: 'session_rejected', user };
+      }
+
+      if (currentUrl.includes('/feed') || feedVisible) {
+        logger.info(`[CronService] [User ${String(user.id)}] Session valid! Confirmed access to feed.`);
+        await TestUserRepository.updateSessionStatus(user.id, 'success');
+        await context.close();
+        return {
+          isValid: true,
+          user,
+          sessionMeta: {
+            cookiesCount: cookies.length,
+            liAtExpires: liAt.expires ?? null,
+            lastLoginAt: user.last_login_at,
+          },
+        };
+      }
+
+      await context.close();
+      return { isValid: false, reason: 'unexpected_page_state', user };
+    } catch (err) {
+      logger.warn(`[CronService] [User ${String(user.id)}] Error during session validation: ${(err as Error).message}`);
+      return { isValid: false, reason: (err as Error).message, user };
+    } finally {
+      await browser.close();
+    }
+  },
 };

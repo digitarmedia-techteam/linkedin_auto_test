@@ -281,4 +281,61 @@ export const TestUserRepository = {
     await pool.query(query, [loginTry ? 1 : 0, userId]);
     logger.info(`[TestUserRepository] Updated login_try to ${String(loginTry ? 1 : 0)} for user ID ${String(userId)}`);
   },
+
+  /**
+   * Retrieves the most recently authenticated user that has saved session data.
+   */
+  async getActiveSessionUser(): Promise<LinkedInTestUser | null> {
+    const pool = getDbPool();
+    const [rows] = await pool.query<UserRow[]>(
+      `SELECT * FROM linkedin_test_users 
+       WHERE storage_state_json IS NOT NULL AND status = 'active'
+       ORDER BY last_login_at DESC, id DESC 
+       LIMIT 1`
+    );
+    if (rows.length === 0 || !rows[0]) return null;
+    return mapRowToUser(rows[0]);
+  },
+
+  /**
+   * Clears saved session data for a user upon explicit logout or expiration.
+   */
+  async clearUserSession(userId: number): Promise<void> {
+    const pool = getDbPool();
+    const query = `
+      UPDATE linkedin_test_users
+      SET
+        storage_state_json = NULL,
+        session_cookies_json = NULL,
+        li_at_token = NULL,
+        last_login_status = 'expired'
+      WHERE id = ?
+    `;
+    await pool.query(query, [userId]);
+
+    // Also remove active cookies and session states from loggedin_details
+    await pool.query(
+      `DELETE FROM loggedin_details 
+       WHERE user_id = ? AND data_category IN ('cookie', 'secret_key', 'full_state')`,
+      [userId]
+    );
+
+    logger.info(`[TestUserRepository] Cleared session data for user ID ${String(userId)}`);
+  },
+
+  /**
+   * Updates last_login_status and optional last_error for a user.
+   */
+  async updateSessionStatus(userId: number, status: LoginStatus, error?: string | null): Promise<void> {
+    const pool = getDbPool();
+    const query = `
+      UPDATE linkedin_test_users
+      SET
+        last_login_status = ?,
+        last_error = COALESCE(?, last_error)
+      WHERE id = ?
+    `;
+    await pool.query(query, [status, error ?? null, userId]);
+    logger.info(`[TestUserRepository] Updated user ${String(userId)} session status to "${status}"`);
+  },
 };

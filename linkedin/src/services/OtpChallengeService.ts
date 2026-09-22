@@ -1,3 +1,4 @@
+import { EventEmitter } from 'events';
 import { logger } from '../utils/logger.js';
 
 export interface OtpChallenge {
@@ -14,7 +15,7 @@ export interface OtpChallenge {
  * OtpChallengeManager — In-memory registry that bridges browser automation
  * waiting on a LinkedIn SMS checkpoint with the user-facing web UI.
  */
-class OtpChallengeManager {
+class OtpChallengeManager extends EventEmitter {
   private challenges = new Map<string, OtpChallenge>();
 
   /**
@@ -40,7 +41,7 @@ class OtpChallengeManager {
       }, timeoutMs);
 
       const now = Date.now();
-      this.challenges.set(key, {
+      const challengeObj: OtpChallenge = {
         userId,
         username,
         status: 'waiting_for_otp',
@@ -54,7 +55,10 @@ class OtpChallengeManager {
           clearTimeout(timer);
           reject(err);
         },
-      });
+      };
+
+      this.challenges.set(key, challengeObj);
+      this.emit('status_update', { username, status: 'otp_required' });
     });
   }
 
@@ -97,6 +101,7 @@ class OtpChallengeManager {
 
     logger.info(`[OtpChallengeService] Submitting received OTP for ${challenge.username} to Playwright runner`);
     challenge.status = 'otp_received';
+    this.emit('status_update', { username: challenge.username, status: 'authenticating', message: 'Verifying OTP...' });
     challenge.resolve(otp.trim());
     return true;
   }
