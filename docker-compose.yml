@@ -1,0 +1,103 @@
+services:
+
+  # ── Volume permission initialiser ─────────────────────────────────────────────
+  # Runs ONCE before the app starts (condition: service_completed_successfully).
+  # Uses plain alpine (no cap_drop) so it can chmod the named volumes even when
+  # the main app container has ALL capabilities dropped.
+  # This is the standard Docker pattern for fixing volume permissions safely.
+  volumes-init:
+    image: alpine:3.19
+    restart: "no"
+    volumes:
+      - uploads:/mnt/uploads
+      - chat_uploads:/mnt/chat_uploads
+    command: >
+      sh -c "
+        mkdir -p /mnt/uploads/attachments /mnt/uploads/assets &&
+        chown -R 1001:1001 /mnt/uploads /mnt/chat_uploads &&
+        chmod -R 755 /mnt/uploads /mnt/chat_uploads &&
+        echo 'Volume permissions fixed.'
+      "
+
+  app:
+    build: .
+    container_name: flurbix-app
+    env_file:
+      - .env
+    environment:
+      # ── Log directory ─────────────────────────────────────────────────────
+      # /tmp/logs is the safest default: the application user (uid 1001) can always
+      # write there because /tmp is a world-writable tmpfs (mounted below).
+      # Logs are ephemeral (reset on container restart) which is fine because
+      # the DB logger provides durable log persistence.
+      #
+      # To keep persistent file logs across restarts:
+      #   1. Remove this line
+      #   2. Add a named volume:  - app_logs:/var/log/app
+      #   3. Set LOG_DIR=/var/log/app here
+      #   4. Declare the volume at the bottom of this file
+      LOG_DIR: /tmp/logs
+      PORT: 3011
+      NODE_ENV: production
+    expose:
+      - "3011"
+    ports:
+      - "3011:3011"
+    restart: unless-stopped
+
+    # Wait for volumes-init to finish fixing permissions before starting
+    depends_on:
+      volumes-init:
+        condition: service_completed_successfully
+
+    networks:
+      - webnet
+
+    # ── Security hardening ────────────────────────────────────────────────────
+    # Prevent the container process from gaining new privileges via setuid/setgid
+    security_opt:
+      - no-new-privileges:true
+
+    # Drop ALL Linux capabilities; add back only what is strictly needed.
+    # The XMRig miner leveraged unrestricted capabilities to bind ports and
+    # manipulate processes. With ALL dropped, it cannot do either.
+    cap_drop:
+      - ALL
+    # cap_add: NET_BIND_SERVICE is not needed — the app binds to port 3011
+    # which is > 1024, so no special capability is required. Removed.
+
+    # ── /tmp as noexec tmpfs ─────────────────────────────────────────────────
+    # Mounts /tmp as an in-memory filesystem with these security flags:
+    #   noexec  - binaries in /tmp cannot be executed (direct XMRig countermeasure)
+    #   nosuid  - setuid bits are ignored (prevents privilege escalation)
+    #   nodev   - device files are ignored
+    #   size=64m - caps DoS via /tmp flooding
+    #
+    # /tmp/logs will be created automatically by the application on first start
+    # because the user can create subdirectories inside /tmp (world-writable).
+    # The noexec flag does NOT prevent creating directories — it only prevents
+    # executing binaries stored there.
+    tmpfs:
+      - /tmp:noexec,nosuid,nodev,size=64m
+
+    # ── Named volumes for persistent upload storage ───────────────────────────
+    # Upload files must survive container restarts, so they live in named
+    # volumes. volumes-init (above) ensures these dirs are writable before
+    # the app starts — safe even with cap_drop: ALL in the app container.
+    volumes:
+      - uploads:/app/public/uploads
+      - chat_uploads:/app/chat-uploads
+
+    # NOTE: host.docker.internal:host-gateway has been intentionally removed.
+    # Exposing the host gateway allowed SSRF attacks to pivot from the container
+    # to the host machine's internal services.
+
+networks:
+  webnet:
+    external: true
+
+volumes:
+  uploads:
+    driver: local
+  chat_uploads:
+    driver: local

@@ -1,4 +1,4 @@
-import type { Page } from '@playwright/test';
+import type { Page } from 'playwright';
 import { ProfilePage } from '../pages/ProfilePage.js';
 import type { NetworkingAdapter } from '../adapters/NetworkingAdapter.js';
 import type { Profile } from '../types/profile.types.js';

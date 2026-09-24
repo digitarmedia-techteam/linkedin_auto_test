@@ -1,5 +1,4 @@
-import type { Page } from '@playwright/test';
-import { expect } from '@playwright/test';
+import type { Page } from 'playwright';
 import { logger } from '../utils/logger.js';
 import { NAV_AVATAR_SELECTOR, FEED_SELECTOR } from '../config/constants.js';
 
@@ -17,7 +16,7 @@ export class FeedPage {
   async assertIsVisible(): Promise<void> {
     logger.info('[FeedPage] Asserting feed page is visible.');
     const indicator = this.feedContainer.or(this.navAvatar);
-    await expect(indicator).toBeVisible({ timeout: 15_000 });
+    await indicator.waitFor({ state: 'visible', timeout: 15_000 });
   }
 
   /** Returns true if the feed is currently displayed. */

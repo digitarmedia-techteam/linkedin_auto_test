@@ -1,4 +1,4 @@
-import { chromium } from '@playwright/test';
+import { chromium } from 'playwright';
 import { config } from '../config/env.js';
 import { logger } from '../utils/logger.js';
 import type { LinkedInTestUser, StorageStateData } from '../db/models/TestUser.js';

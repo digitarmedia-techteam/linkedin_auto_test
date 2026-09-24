@@ -462,17 +462,23 @@ export class CompanyPeopleSearchService {
 
                 // Extract Avatar Photo strictly for this person
                 let photoUrl: string | null = null;
-                const avatarImg = card.querySelector(
-                  '.entity-result__universal-image img, .presence-entity__image, .ivm-image-view-model img, .artdeco-entity-lockup__image img, .entity-result__image img',
-                ) as HTMLImageElement | null;
+                const allImgs = Array.from(card.querySelectorAll('img')) as HTMLImageElement[];
+                for (const img of allImgs) {
+                  const candidate =
+                    img.getAttribute('data-delayed-url') ||
+                    img.getAttribute('data-src') ||
+                    img.getAttribute('data-lazy-src') ||
+                    img.currentSrc ||
+                    img.src ||
+                    '';
 
-                if (avatarImg && avatarImg.src) {
-                  const src = avatarImg.src;
-                  const isCompanyLogo = /company-logo|ghost-company|mini-school/i.test(src);
-                  const isGhostAvatar = /ghost-person|data:image\/svg/i.test(src);
-                  const isDataUri = src.startsWith('data:');
-                  if (!isCompanyLogo && !isGhostAvatar && !isDataUri && (src.includes('licdn.com') || src.includes('profile-displayphoto'))) {
-                    photoUrl = src;
+                  if (!candidate) continue;
+                  if (candidate.startsWith('data:')) continue;
+                  if (/ghost-person|ghost-company|company-logo|school-logo|mini-school/i.test(candidate)) continue;
+
+                  if (candidate.includes('licdn.com') || candidate.includes('profile-displayphoto')) {
+                    photoUrl = candidate;
+                    break;
                   }
                 }
 

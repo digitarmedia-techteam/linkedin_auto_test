@@ -1,5 +1,4 @@
-import type { Page } from '@playwright/test';
-import { expect } from '@playwright/test';
+import type { Page } from 'playwright';
 import { logger } from '../utils/logger.js';
 import { NAV_AVATAR_SELECTOR, FEED_SELECTOR } from '../config/constants.js';
 import { AuthenticationError } from '../utils/errors.js';
@@ -167,9 +166,10 @@ export class LoginPage {
 
     // Fallback: check for nav avatar or feed selector
     try {
-      await expect(
-        this.page.locator(`${NAV_AVATAR_SELECTOR}, ${FEED_SELECTOR}`).first(),
-      ).toBeVisible({ timeout: 10_000 });
+      await this.page
+        .locator(`${NAV_AVATAR_SELECTOR}, ${FEED_SELECTOR}`)
+        .first()
+        .waitFor({ state: 'visible', timeout: 10_000 });
     } catch {
       throw new AuthenticationError(
         'Login did not complete within the expected timeout. ' +

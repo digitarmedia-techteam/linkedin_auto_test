@@ -1,5 +1,4 @@
-import type { Page } from '@playwright/test';
-import { expect } from '@playwright/test';
+import type { Page } from 'playwright';
 import { logger } from '../utils/logger.js';
 import type { ConnectionRequest } from '../types/connection.types.js';
 
@@ -16,7 +15,8 @@ export class ConnectionsPage {
   async open(): Promise<void> {
     logger.info('[ConnectionsPage] Navigating to connections page.');
     await this.page.goto('/connections', { waitUntil: 'domcontentloaded' });
-    await expect(this.sentRequestsList.or(this.pendingRequestsList)).toBeVisible({
+    await this.sentRequestsList.or(this.pendingRequestsList).waitFor({
+      state: 'visible',
       timeout: 10_000,
     });
   }

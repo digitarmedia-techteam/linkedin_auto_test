@@ -3,8 +3,8 @@
 
 > **Target Codebase**: `digitarmedia-techteam/linkedin_auto_test` (`test-auto`)  
 > **Core Stack**: Node.js (ES Modules) • Express.js 5 • Playwright • MySQL • TypeScript (`tsx`) • HTML5/CSS3/Vanilla JS  
-> **Default Port**: `4001`  
-> **Interactive Dashboard**: `http://localhost:4001/addnewuser`
+> **Default Port**: `3011`  
+> **Interactive Dashboard**: `http://localhost:3011/addnewuser`
 
 ---
 
@@ -22,7 +22,7 @@ flowchart TD
         ThirdParty["External REST Client / cURL"]
     end
 
-    subgraph Backend["Express 5 API Gateway (server.js :4001)"]
+    subgraph Backend["Express 5 API Gateway (server.js :3011)"]
         Router["Route Handlers & Middleware"]
         SSE["Server-Sent Events Emitter\n(/api/login/stream)"]
         OTPManager["OtpChallengeService\n(In-Memory Promise Bridge)"]
@@ -294,7 +294,7 @@ cp linkedin/.env.example .env
 
 | Variable | Required | Default | Description |
 |---|---|---|---|
-| `PORT` | Optional | `4001` | HTTP port for the Express server |
+| `PORT` | Optional | `3011` | HTTP port for the Express server |
 | `APP_BASE_URL` | Yes | `https://www.linkedin.com` | Base URL for navigation and authentication |
 | `TEST_USERNAME` | Yes | — | Default LinkedIn account email address |
 | `TEST_PASSWORD` | Yes | — | Default LinkedIn account password |
@@ -312,7 +312,7 @@ cp linkedin/.env.example .env
 
 ```ini
 # --- Development (.env) ---
-PORT=4001
+PORT=3011
 APP_BASE_URL=https://www.linkedin.com
 TEST_USERNAME=developer@example.com
 TEST_PASSWORD=Password123!
@@ -325,7 +325,7 @@ DB_USER=root
 DB_PASSWORD=local_root_password
 
 # --- Production (.env) ---
-PORT=4001
+PORT=3011
 APP_BASE_URL=https://www.linkedin.com
 TEST_USERNAME=bot_primary@company.com
 TEST_PASSWORD=VerySecurePassword#987!
@@ -376,12 +376,12 @@ npm run dev
 
 The server will output:
 ```text
-🚀 LinkedIn Automation Server running on http://localhost:4001
-⏰ Public Cron Route: http://localhost:4001/cron/login
-💻 Add User & Session Capture UI: http://localhost:4001/addnewuser
+🚀 LinkedIn Automation Server running on http://localhost:3011
+⏰ Public Cron Route: http://localhost:3011/cron/login
+💻 Add User & Session Capture UI: http://localhost:3011/addnewuser
 ```
 
-Open **`http://localhost:4001/addnewuser`** in your browser.
+Open **`http://localhost:3011/addnewuser`** in your browser.
 
 ---
 
@@ -444,7 +444,7 @@ Returns service status, active port, and endpoint directory.
   "status": "online",
   "service": "LinkedIn Test Automation & Session Sync Service",
   "cronEndpoint": "/cron/login",
-  "ui": "http://localhost:4001/addnewuser"
+  "ui": "http://localhost:3011/addnewuser"
 }
 ```
 
@@ -697,7 +697,7 @@ nano /var/www/linkedin-auto/.env
 
 Paste your production credentials:
 ```ini
-PORT=4001
+PORT=3011
 APP_BASE_URL=https://www.linkedin.com
 TEST_USERNAME=primary_account@yourdomain.com
 TEST_PASSWORD=YourSecurePassword123!
@@ -717,7 +717,29 @@ npm run db:init
 cd ..
 ```
 
-### 9.3 Run with PM2 (Process Manager)
+### 9.3 Docker Deployment (Docker Compose)
+
+The repository provides a production-hardened `Dockerfile` and `docker-compose.yml` with:
+- Non-root user execution (`UID 1001`)
+- Permission initialization container (`volumes-init`)
+- Capabilities dropped (`cap_drop: - ALL`)
+- Secure no-exec in-memory tmpfs (`/tmp:noexec,nosuid,nodev,size=64m`)
+- External network integration (`webnet`)
+
+To deploy using Docker:
+
+```bash
+# 1. Ensure external docker network exists
+docker network create webnet || true
+
+# 2. Build and start containers
+docker compose up -d --build
+
+# 3. Check logs
+docker compose logs -f app
+```
+
+### 9.4 Run with PM2 (Process Manager)
 
 Create a PM2 ecosystem file `ecosystem.config.cjs`:
 
@@ -731,7 +753,7 @@ module.exports = {
       node_args: '--import tsx',
       env: {
         NODE_ENV: 'production',
-        PORT: 4001,
+        PORT: 3011,
       },
       instances: 1,
       exec_mode: 'fork',
@@ -789,7 +811,7 @@ server {
     proxy_send_timeout 360s;
 
     location / {
-        proxy_pass http://127.0.0.1:4001;
+        proxy_pass http://127.0.0.1:3011;
         proxy_http_version 1.1;
 
         # Standard proxy headers
@@ -839,7 +861,7 @@ Add the following line to run the synchronization every 6 hours:
 
 ```bash
 # Trigger LinkedIn account session sync every 6 hours
-0 */6 * * * curl -s -X POST http://127.0.0.1:4001/cron/login >> /var/log/linkedin_cron.log 2>&1
+0 */6 * * * curl -s -X POST http://127.0.0.1:3011/cron/login >> /var/log/linkedin_cron.log 2>&1
 ```
 
 Or configure an external monitoring/cron service (such as [cron-job.org](https://cron-job.org) or Cloud Scheduler) to make an HTTP `POST` request to `https://auto.yourdomain.com/cron/login` with your desired frequency.
@@ -877,12 +899,12 @@ Or configure an external monitoring/cron service (such as [cron-job.org](https:/
   2. The authenticated session cookies will be saved to MySQL and can then be used in headless mode on your server.
   3. If deploying on cloud VPS (AWS, DigitalOcean, GCP), LinkedIn may block datacenters. Configure a residential proxy in `meta_data` or the `proxy` column of `linkedin_test_users`.
 
-### 5. `ERR_CONNECTION_REFUSED` on Port 4001
+### 5. `ERR_CONNECTION_REFUSED` on Port 3011
 - **Check**: Verify if the server is running:
   ```bash
   pm2 status
   # or
-  sudo lsof -i :4001
+  sudo lsof -i :3011
   ```
 - **Check Logs**:
   ```bash
@@ -907,8 +929,8 @@ Print or reference this quick checklist when handing off to a new developer:
 - [ ] Playwright Chromium installed via `npx playwright install chromium`.
 - [ ] `.env` created in root directory with valid MySQL credentials.
 - [ ] Schema initialized via `cd linkedin && npm run db:init`.
-- [ ] Server running on `npm run dev` or PM2.
-- [ ] Health check verified at `http://localhost:4001/`.
-- [ ] Interactive UI accessible at `http://localhost:4001/addnewuser`.
+- [ ] Server running on `npm run dev`, PM2, or Docker.
+- [ ] Health check verified at `http://localhost:3011/`.
+- [ ] Interactive UI accessible at `http://localhost:3011/addnewuser`.
 - [ ] Initial account successfully logged in and session verified in `linkedin_test_users`.
-- [ ] Cron endpoint tested via `curl http://localhost:4001/cron/login`.
+- [ ] Cron endpoint tested via `curl http://localhost:3011/cron/login`.

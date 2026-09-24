@@ -1,4 +1,4 @@
-import { chromium } from '@playwright/test';
+import { chromium, type Browser } from 'playwright';
 import { config } from '../config/env.js';
 import { logger } from '../utils/logger.js';
 import { TestUserRepository } from '../db/repositories/TestUserRepository.js';
@@ -155,7 +155,7 @@ export const MultiUserLoginCronService = {
    * and extracts all cookies, localStorage, sessionStorage, and secret keys.
    */
   async authenticateUserInIsolatedContext(
-    browser: import('@playwright/test').Browser,
+    browser: Browser,
     user: LinkedInTestUser,
     options?: { forceFresh?: boolean },
   ): Promise<UserCronResult> {

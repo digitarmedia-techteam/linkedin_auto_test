@@ -45,11 +45,11 @@ cp linkedin/.env.example .env
 Edit `.env` with your database and LinkedIn test account credentials:
 
 ```ini
-PORT=4001
+PORT=3011
 APP_BASE_URL=https://www.linkedin.com
 TEST_USERNAME=your_email@example.com
 TEST_PASSWORD=YourPassword123
-HEADLESS=false
+HEADLESS=true
 DB_HOST=127.0.0.1
 DB_PORT=3306
 DB_NAME=linkedin_db
@@ -71,6 +71,7 @@ mysql -u root -p linkedin_db < db/schema.sql
 
 ### 5. Run Server
 
+#### Option A: Local Node / PM2
 ```bash
 # Start development server with live watch:
 npm run dev
@@ -79,7 +80,19 @@ npm run dev
 npm start
 ```
 
-Open **`http://localhost:4001/addnewuser`** to access the interactive web management dashboard.
+#### Option B: Docker Compose
+```bash
+# Ensure external network exists
+docker network create webnet || true
+
+# Build and run containers in background
+docker compose up -d --build
+
+# View logs
+docker compose logs -f app
+```
+
+Open **`http://localhost:3011/addnewuser`** to access the interactive web management dashboard.
 
 ---
 

@@ -1,4 +1,4 @@
-import type { Browser, BrowserContext, Page } from '@playwright/test';
+import type { Browser, BrowserContext, Page } from 'playwright';
 import { LoginPage } from '../pages/LoginPage.js';
 import { FeedPage } from '../pages/FeedPage.js';
 import { config } from '../config/env.js';

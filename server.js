@@ -15,6 +15,7 @@ import { ConnectionTrackingRepository } from './linkedin/src/db/repositories/Con
 import { AppUserRepository } from './linkedin/src/db/repositories/AppUserRepository.ts';
 import { CompanySearchService, LINKEDIN_COUNTRY_GEO_MAP } from './linkedin/src/services/CompanySearchService.ts';
 import { CompanyPeopleSearchService } from './linkedin/src/services/CompanyPeopleSearchService.ts';
+import { PeopleSearchService } from './linkedin/src/services/PeopleSearchService.ts';
 import { EventEmitter } from 'events';
 
 dotenv.config();
@@ -30,7 +31,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = process.env.PORT || 4001;
+const PORT = process.env.PORT || 3011;
 
 app.use(cors());
 app.use(express.json());
@@ -1920,6 +1921,54 @@ app.get('/api/company/search', authenticateToken, requirePermission('connections
 app.get('/api/company/countries', authenticateToken, (req, res) => {
   res.json({ success: true, countries: LINKEDIN_COUNTRY_GEO_MAP });
 });
+app.get('/api/countries', (req, res) => {
+  res.json({ success: true, countries: LINKEDIN_COUNTRY_GEO_MAP });
+});
+
+// ── LinkedIn Global People Search (Multi-Country & Designation) ─────────────
+const handlePeopleSearch = async (req, res) => {
+  const keywords = req.body?.keywords || req.query?.keywords || '';
+  const designation = req.body?.designation || req.body?.title || req.query?.designation || req.query?.title || '';
+  const countries = req.body?.countries || req.body?.geoUrns || req.query?.countries || req.query?.geoUrns || '';
+  const currentCompany = req.body?.currentCompany || req.body?.companyIds || req.query?.currentCompany || req.query?.companyIds || '';
+  const network = req.body?.network || req.query?.network || '';
+  const headless = req.body?.headless !== undefined ? Boolean(req.body.headless) : true;
+  const limit = req.body?.limit ? parseInt(req.body.limit, 10) : 20;
+
+  const { sender, username } = await resolveSenderUser(req);
+  if (!sender) {
+    return res.status(404).json({
+      success: false,
+      error: username
+        ? `LinkedIn account "${username}" not found or not accessible to your account.`
+        : 'No active LinkedIn session found. Please connect your LinkedIn account first.',
+    });
+  }
+
+  try {
+    const countryLog = Array.isArray(countries) ? countries.join(',') : countries;
+    console.log(`[Server] People search: Keywords: "${keywords}", Designation: "${designation}", Countries: "${countryLog}" by ${req.appUser.email} using LinkedIn account ${sender.username}`);
+    const result = await PeopleSearchService.searchPeople({
+      user: sender,
+      keywords: String(keywords).trim() || undefined,
+      designation: String(designation).trim() || undefined,
+      countries,
+      currentCompany,
+      network: String(network).trim() || undefined,
+      headless,
+      limit,
+    });
+    res.json(result);
+  } catch (error) {
+    console.error('[Server] People search error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+app.post('/api/people/search', authenticateToken, requirePermission('connections:read'), handlePeopleSearch);
+app.get('/api/people/search', authenticateToken, requirePermission('connections:read'), handlePeopleSearch);
+app.post('/api/search/people', authenticateToken, requirePermission('connections:read'), handlePeopleSearch);
+app.get('/api/search/people', authenticateToken, requirePermission('connections:read'), handlePeopleSearch);
 
 // ── LinkedIn Company People Search ──────────────────────────────────────────
 const handleCompanyPeopleSearch = async (req, res) => {

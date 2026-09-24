@@ -1938,7 +1938,7 @@
 
       <!-- Recipient Preview Box -->
       <div id="peopleMsgRecipientBox" style="display: flex; gap: 12px; align-items: center; background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(14, 165, 233, 0.2); border-radius: var(--radius-sm); padding: 10px 14px; margin-bottom: 16px;">
-        <img id="peopleMsgRecipientAvatar" src="" style="width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 1px solid rgba(255,255,255,0.15);" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22%2394a3b8%22%3E%3Cpath d=%22M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z%22/%3E%3C/svg%3E'">
+        <img id="peopleMsgRecipientAvatar" referrerpolicy="no-referrer" src="" style="width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 1px solid rgba(255,255,255,0.15);" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22%2394a3b8%22%3E%3Cpath d=%22M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z%22/%3E%3C/svg%3E'">
         <div style="min-width: 0; flex: 1;">
           <div id="peopleMsgRecipientName" style="font-size: 14px; font-weight: 700; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></div>
           <div id="peopleMsgRecipientHeadline" style="font-size: 11px; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></div>
@@ -1990,7 +1990,7 @@
 
       <!-- Recipient Preview Box -->
       <div id="peopleConnectRecipientBox" style="display: flex; gap: 12px; align-items: center; background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(168, 85, 247, 0.25); border-radius: var(--radius-sm); padding: 10px 14px; margin-bottom: 16px;">
-        <img id="peopleConnectRecipientAvatar" src="" style="width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 1px solid rgba(255,255,255,0.15);" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22%2394a3b8%22%3E%3Cpath d=%22M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z%22/%3E%3C/svg%3E'">
+        <img id="peopleConnectRecipientAvatar" referrerpolicy="no-referrer" src="" style="width: 44px; height: 44px; border-radius: 50%; object-fit: cover; border: 1px solid rgba(255,255,255,0.15);" onerror="this.src='data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22%2394a3b8%22%3E%3Cpath d=%22M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z%22/%3E%3C/svg%3E'">
         <div style="min-width: 0; flex: 1;">
           <div id="peopleConnectRecipientName" style="font-size: 14px; font-weight: 700; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></div>
           <div id="peopleConnectRecipientHeadline" style="font-size: 11px; color: var(--text-dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"></div>
@@ -3186,20 +3186,35 @@
       </div>
     </section>
 
-    <!-- ── LinkedIn Company Search Studio ─────────────────────────────────── -->
+    <!-- ── LinkedIn Intelligence & Search Studio (Companies & People) ─────────────────────────────────── -->
     <section class="glass-card" id="companySearchSection" style="display: none; margin-top: 32px; margin-bottom: 32px; padding: 24px; border: 1px solid rgba(168, 85, 247, 0.3); background: linear-gradient(135deg, rgba(168, 85, 247, 0.04) 0%, rgba(15, 23, 42, 0.95) 100%);">
-      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 22px; flex-wrap: wrap; gap: 12px;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
         <div>
-          <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(168, 85, 247, 0.15); border: 1px solid rgba(168, 85, 247, 0.4); color: #c084fc; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding: 3px 10px; border-radius: 9999px; margin-bottom: 8px; font-family: var(--font-mono);">&#127970; Company Intelligence</div>
-          <h2 style="font-size: 20px; font-weight: 700; color: #ffffff; margin-bottom: 4px;">LinkedIn Company Search</h2>
-          <p style="font-size: 13px; color: var(--text-muted);">Search LinkedIn for companies by name or keyword. Results are fetched live using your connected LinkedIn session.</p>
+          <div style="display: inline-flex; align-items: center; gap: 6px; background: rgba(168, 85, 247, 0.15); border: 1px solid rgba(168, 85, 247, 0.4); color: #c084fc; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; padding: 3px 10px; border-radius: 9999px; margin-bottom: 8px; font-family: var(--font-mono);">&#128269; Intelligence Search Studio</div>
+          <h2 style="font-size: 20px; font-weight: 700; color: #ffffff; margin-bottom: 4px;">LinkedIn Search & Discovery</h2>
+          <p style="font-size: 13px; color: var(--text-muted);">Search live across LinkedIn for <strong style="color: #c084fc;">Companies</strong> or <strong style="color: #38bdf8;">People</strong> with multi-country faceted filters, designation targeting, and complete professional details.</p>
         </div>
         <div style="display: flex; gap: 10px; align-items: center; flex-shrink: 0;">
           <span id="companySearchResultBadge" style="display: none; font-size: 12px; font-family: var(--font-mono); color: #c084fc; background: rgba(168, 85, 247, 0.12); border: 1px solid rgba(168, 85, 247, 0.3); padding: 4px 12px; border-radius: 9999px;"></span>
           <button type="button" class="btn btn-secondary" id="btnClearCompanySearch" style="font-size: 12px; padding: 8px 14px; display: none;">&#x2715; Clear Results</button>
         </div>
       </div>
-      <div style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: var(--radius-md); padding: 18px; margin-bottom: 22px;">
+
+      <!-- Search Mode Switcher Tabs -->
+      <div style="display: flex; gap: 8px; margin-bottom: 18px; padding: 6px; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: var(--radius-md); width: fit-content;">
+        <button type="button" id="tabBtnSearchCompanies" class="tab-btn active" onclick="window.switchSearchTab('companies')" style="padding: 8px 20px; font-size: 13px; font-weight: 700; border-radius: 8px; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s ease;">
+          <span>🏢</span>
+          <span>Companies</span>
+        </button>
+        <button type="button" id="tabBtnSearchPeople" class="tab-btn" onclick="window.switchSearchTab('people')" style="padding: 8px 20px; font-size: 13px; font-weight: 700; border-radius: 8px; display: inline-flex; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s ease;">
+          <span>👥</span>
+          <span>People</span>
+          <span style="font-size: 10px; background: rgba(56,189,248,0.25); color: #38bdf8; padding: 1px 6px; border-radius: 9999px; font-weight: 700;">Multi-Country</span>
+        </button>
+      </div>
+
+      <!-- ── TAB 1: COMPANY SEARCH FORM ──────────────────────────────────────── -->
+      <div id="panelFormCompanies" style="background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(168, 85, 247, 0.2); border-radius: var(--radius-md); padding: 18px; margin-bottom: 22px;">
         <form id="formCompanySearch" style="display: flex; gap: 12px; align-items: flex-start; flex-wrap: wrap;">
           <!-- Keyword input -->
           <div style="flex: 1.2; min-width: 240px;">
@@ -3223,7 +3238,7 @@
                 <optgroup label="Popular Countries">
                   <option value="103323778">🇲🇽 Mexico (103323778)</option>
                   <option value="103644278">🇺🇸 United States (103644278)</option>
-                  <option value="102257491">🇬🇧 United Kingdom (102257491)</option>
+                  <option value="101165590">🇬🇧 United Kingdom (101165590)</option>
                   <option value="102713980">🇮🇳 India (102713980)</option>
                   <option value="101174742">🇨🇦 Canada (101174742)</option>
                   <option value="101452733">🇦🇺 Australia (101452733)</option>
@@ -3241,44 +3256,44 @@
                   <option value="100446943">🇦🇷 Argentina (100446943)</option>
                   <option value="104621616">🇨🇱 Chile (104621616)</option>
                   <option value="100876405">🇨🇴 Colombia (100876405)</option>
-                  <option value="100293800">🇨🇷 Costa Rica (100293800)</option>
-                  <option value="105828498">🇩🇴 Dominican Republic (105828498)</option>
-                  <option value="105816943">🇪🇨 Ecuador (105816943)</option>
+                  <option value="101739942">🇨🇷 Costa Rica (101739942)</option>
+                  <option value="105057336">🇩🇴 Dominican Republic (105057336)</option>
+                  <option value="106373116">🇪🇨 Ecuador (106373116)</option>
                   <option value="104445899">🇬🇹 Guatemala (104445899)</option>
-                  <option value="103867087">🇵🇦 Panama (103867087)</option>
+                  <option value="100808673">🇵🇦 Panama (100808673)</option>
                   <option value="102927786">🇵🇪 Peru (102927786)</option>
                   <option value="100867946">🇺🇾 Uruguay (100867946)</option>
                 </optgroup>
                 <optgroup label="Europe">
                   <option value="103883259">🇦🇹 Austria (103883259)</option>
                   <option value="100565514">🇧🇪 Belgium (100565514)</option>
-                  <option value="105315481">🇧🇬 Bulgaria (105315481)</option>
+                  <option value="105333783">🇧🇬 Bulgaria (105333783)</option>
                   <option value="104688944">🇭🇷 Croatia (104688944)</option>
-                  <option value="104769905">🇨🇿 Czech Republic (104769905)</option>
+                  <option value="104508036">🇨🇿 Czech Republic (104508036)</option>
                   <option value="104514075">🇩🇰 Denmark (104514075)</option>
-                  <option value="103738706">🇪🇪 Estonia (103738706)</option>
+                  <option value="102974008">🇪🇪 Estonia (102974008)</option>
                   <option value="100456013">🇫🇮 Finland (100456013)</option>
                   <option value="104677530">🇬🇷 Greece (104677530)</option>
-                  <option value="100288708">🇭🇺 Hungary (100288708)</option>
+                  <option value="100288700">🇭🇺 Hungary (100288700)</option>
                   <option value="104738515">🇮🇪 Ireland (104738515)</option>
-                  <option value="102120677">🇮🇸 Iceland (102120677)</option>
-                  <option value="105740417">🇱🇻 Latvia (105740417)</option>
-                  <option value="103527419">🇱🇹 Lithuania (103527419)</option>
-                  <option value="104246759">🇱🇺 Luxembourg (104246759)</option>
+                  <option value="105238872">🇮🇸 Iceland (105238872)</option>
+                  <option value="104341318">🇱🇻 Latvia (104341318)</option>
+                  <option value="101464403">🇱🇹 Lithuania (101464403)</option>
+                  <option value="104042105">🇱🇺 Luxembourg (104042105)</option>
                   <option value="103819153">🇳🇴 Norway (103819153)</option>
                   <option value="105072130">🇵🇱 Poland (105072130)</option>
                   <option value="100364837">🇵🇹 Portugal (100364837)</option>
                   <option value="106670623">🇷🇴 Romania (106670623)</option>
-                  <option value="106805788">🇸🇰 Slovakia (106805788)</option>
-                  <option value="100342525">🇸🇮 Slovenia (100342525)</option>
+                  <option value="103119917">🇸🇰 Slovakia (103119917)</option>
+                  <option value="106137034">🇸🇮 Slovenia (106137034)</option>
                   <option value="105117694">🇸🇪 Sweden (105117694)</option>
                   <option value="106693272">🇨🇭 Switzerland (106693272)</option>
                   <option value="102105699">🇹🇷 Turkey (102105699)</option>
-                  <option value="102264447">🇺🇦 Ukraine (102264447)</option>
+                  <option value="102264497">🇺🇦 Ukraine (102264497)</option>
                 </optgroup>
                 <optgroup label="Asia & Pacific">
-                  <option value="106670623">🇧🇩 Bangladesh (106670623)</option>
-                  <option value="102884285">🇨🇳 China (102884285)</option>
+                  <option value="106215326">🇧🇩 Bangladesh (106215326)</option>
+                  <option value="102890883">🇨🇳 China (102890883)</option>
                   <option value="103291313">🇭🇰 Hong Kong (103291313)</option>
                   <option value="102478259">🇮🇩 Indonesia (102478259)</option>
                   <option value="101620260">🇮🇱 Israel (101620260)</option>
@@ -3288,24 +3303,24 @@
                   <option value="101022442">🇵🇰 Pakistan (101022442)</option>
                   <option value="103121230">🇵🇭 Philippines (103121230)</option>
                   <option value="105149562">🇰🇷 South Korea (105149562)</option>
-                  <option value="101168579">🇱🇰 Sri Lanka (101168579)</option>
+                  <option value="100446352">🇱🇰 Sri Lanka (100446352)</option>
                   <option value="104187078">🇹🇼 Taiwan (104187078)</option>
-                  <option value="105490917">🇹🇭 Thailand (105490917)</option>
-                  <option value="106155005">🇻🇳 Vietnam (106155005)</option>
+                  <option value="105146118">🇹🇭 Thailand (105146118)</option>
+                  <option value="104195383">🇻🇳 Vietnam (104195383)</option>
                 </optgroup>
                 <optgroup label="Middle East & Africa">
-                  <option value="102046473">🇧🇭 Bahrain (102046473)</option>
+                  <option value="100425729">🇧🇭 Bahrain (100425729)</option>
                   <option value="106155005">🇪🇬 Egypt (106155005)</option>
-                  <option value="105460592">🇬🇭 Ghana (105460592)</option>
-                  <option value="106368470">🇯🇴 Jordan (106368470)</option>
+                  <option value="105769538">🇬🇭 Ghana (105769538)</option>
+                  <option value="103710677">🇯🇴 Jordan (103710677)</option>
                   <option value="100710459">🇰🇪 Kenya (100710459)</option>
-                  <option value="102855770">🇰🇼 Kuwait (102855770)</option>
-                  <option value="106596482">🇱🇧 Lebanon (106596482)</option>
+                  <option value="103239229">🇰🇼 Kuwait (103239229)</option>
+                  <option value="101834488">🇱🇧 Lebanon (101834488)</option>
                   <option value="102787409">🇲🇦 Morocco (102787409)</option>
                   <option value="105365761">🇳🇬 Nigeria (105365761)</option>
-                  <option value="103038473">🇴🇲 Oman (103038473)</option>
+                  <option value="103619019">🇴🇲 Oman (103619019)</option>
                   <option value="104170880">🇶🇦 Qatar (104170880)</option>
-                  <option value="105309088">🇿🇦 South Africa (105309088)</option>
+                  <option value="104035573">🇿🇦 South Africa (104035573)</option>
                 </optgroup>
               </select>
             </div>
@@ -3340,7 +3355,7 @@
             <button type="button" class="btn btn-secondary" style="font-size: 11px; padding: 2px 9px; border-radius: 9999px; background: rgba(14,165,233,0.1); border-color: rgba(14,165,233,0.3); color: #38bdf8;" onclick="window.setCountryPreset('', 'Global')">🌐 Global</button>
             <button type="button" class="btn btn-secondary" style="font-size: 11px; padding: 2px 9px; border-radius: 9999px; background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.3); color: #34d399;" onclick="window.setCountryPreset('103323778', '🇲🇽 Mexico')">🇲🇽 Mexico</button>
             <button type="button" class="btn btn-secondary" style="font-size: 11px; padding: 2px 9px; border-radius: 9999px;" onclick="window.setCountryPreset('103644278', '🇺🇸 USA')">🇺🇸 USA</button>
-            <button type="button" class="btn btn-secondary" style="font-size: 11px; padding: 2px 9px; border-radius: 9999px;" onclick="window.setCountryPreset('102257491', '🇬🇧 UK')">🇬🇧 UK</button>
+            <button type="button" class="btn btn-secondary" style="font-size: 11px; padding: 2px 9px; border-radius: 9999px;" onclick="window.setCountryPreset('101165590', '🇬🇧 UK')">🇬🇧 UK</button>
             <button type="button" class="btn btn-secondary" style="font-size: 11px; padding: 2px 9px; border-radius: 9999px;" onclick="window.setCountryPreset('102713980', '🇮🇳 India')">🇮🇳 India</button>
             <button type="button" class="btn btn-secondary" style="font-size: 11px; padding: 2px 9px; border-radius: 9999px;" onclick="window.setCountryPreset('101282230', '🇩🇪 Germany')">🇩🇪 Germany</button>
             <button type="button" class="btn btn-secondary" style="font-size: 11px; padding: 2px 9px; border-radius: 9999px;" onclick="window.setCountryPreset('101174742', '🇨🇦 Canada')">🇨🇦 Canada</button>
@@ -3352,26 +3367,169 @@
           </div>
         </form>
       </div>
-      <div id="companySearchIdle" style="text-align: center; padding: 48px 16px; color: var(--text-muted); background: rgba(10, 16, 30, 0.4); border-radius: var(--radius-md); border: 1px dashed rgba(168, 85, 247, 0.2);">
-        <div style="font-size: 40px; margin-bottom: 14px;">&#127970;</div>
-        <h3 style="font-size: 16px; font-weight: 700; color: #ffffff; margin-bottom: 6px;">Search LinkedIn Companies</h3>
-        <p style="font-size: 13px; color: var(--text-dim); max-width: 420px; margin: 0 auto;">Enter a company name or keyword above and click <strong style="color: #c084fc;">Search Companies</strong>. Results are fetched live from LinkedIn using your active session.</p>
-        <div style="margin-top: 18px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;">
-          <span style="font-size: 11px; background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.25); color: #c084fc; padding: 4px 10px; border-radius: 9999px;">Company Name</span>
-          <span style="font-size: 11px; background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.25); color: #c084fc; padding: 4px 10px; border-radius: 9999px;">Partial Name</span>
-          <span style="font-size: 11px; background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.25); color: #c084fc; padding: 4px 10px; border-radius: 9999px;">Industry Keyword</span>
-          <span style="font-size: 11px; background: rgba(168, 85, 247, 0.1); border: 1px solid rgba(168, 85, 247, 0.25); color: #c084fc; padding: 4px 10px; border-radius: 9999px;">Location</span>
-        </div>
+
+      <!-- ── TAB 2: PEOPLE SEARCH FORM (MULTI-COUNTRY & DESIGNATION) ────────── -->
+      <div id="panelFormPeople" style="display: none; background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: var(--radius-md); padding: 18px; margin-bottom: 22px;">
+        <form id="formPeopleSearch" style="display: flex; flex-direction: column; gap: 14px;">
+          <!-- Primary Row: Keywords, Designation, Company -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px;">
+            <!-- Keywords / Skills -->
+            <div>
+              <label class="form-label" for="peopleSearchKeywords" style="font-size: 12px; margin-bottom: 6px; color: #38bdf8;">
+                <span>Keywords / Skills / Name</span>
+                <span style="font-size: 10px; color: var(--text-dim); font-weight: normal; margin-left: 6px;">(e.g. account manager, growth, AI)</span>
+              </label>
+              <div class="input-wrapper" style="position: relative;">
+                <span class="input-icon" style="font-size: 16px;">🔍</span>
+                <input type="text" id="peopleSearchKeywords" class="form-input" placeholder="e.g. account manager, software engineer..." autocomplete="off" style="padding-left: 40px; font-size: 13px; border-color: rgba(56, 189, 248, 0.35);">
+              </div>
+            </div>
+
+            <!-- Designation / Title -->
+            <div>
+              <label class="form-label" for="peopleSearchDesignation" style="font-size: 12px; margin-bottom: 6px; color: #c084fc;">
+                <span>Designation / Current Title</span>
+                <span style="font-size: 10px; color: var(--text-dim); font-weight: normal; margin-left: 6px;">(Exact role filter)</span>
+              </label>
+              <div class="input-wrapper" style="position: relative;">
+                <span class="input-icon" style="font-size: 16px;">💼</span>
+                <input type="text" id="peopleSearchDesignation" class="form-input" placeholder="e.g. Founder, CEO, Manager, VP, Director..." autocomplete="off" style="padding-left: 40px; font-size: 13px; border-color: rgba(168, 85, 247, 0.35);">
+              </div>
+              <!-- Quick Designation presets -->
+              <div style="display: flex; gap: 5px; flex-wrap: wrap; margin-top: 6px;">
+                <button type="button" class="btn btn-secondary" style="font-size: 10px; padding: 2px 7px; border-radius: 9999px;" onclick="window.setPeopleDesignationPreset('Founder')">Founder</button>
+                <button type="button" class="btn btn-secondary" style="font-size: 10px; padding: 2px 7px; border-radius: 9999px;" onclick="window.setPeopleDesignationPreset('CEO')">CEO</button>
+                <button type="button" class="btn btn-secondary" style="font-size: 10px; padding: 2px 7px; border-radius: 9999px;" onclick="window.setPeopleDesignationPreset('Manager')">Manager</button>
+                <button type="button" class="btn btn-secondary" style="font-size: 10px; padding: 2px 7px; border-radius: 9999px;" onclick="window.setPeopleDesignationPreset('Director')">Director</button>
+                <button type="button" class="btn btn-secondary" style="font-size: 10px; padding: 2px 7px; border-radius: 9999px;" onclick="window.setPeopleDesignationPreset('Account Manager')">Account Manager</button>
+                <button type="button" class="btn btn-secondary" style="font-size: 10px; padding: 2px 7px; border-radius: 9999px;" onclick="window.setPeopleDesignationPreset('Software Engineer')">Software Engineer</button>
+              </div>
+            </div>
+
+            <!-- Current Company (Optional) -->
+            <div>
+              <label class="form-label" for="peopleSearchCompany" style="font-size: 12px; margin-bottom: 6px; color: var(--text-muted);">
+                <span>Current Company (Optional)</span>
+                <span style="font-size: 10px; color: var(--text-dim); font-weight: normal; margin-left: 6px;">(IDs or Company Name)</span>
+              </label>
+              <div class="input-wrapper" style="position: relative;">
+                <span class="input-icon" style="font-size: 16px;">🏢</span>
+                <input type="text" id="peopleSearchCompany" class="form-input" placeholder="e.g. 1035, 1441 or Google, Microsoft..." autocomplete="off" style="padding-left: 40px; font-size: 13px; border-color: rgba(255, 255, 255, 0.12);">
+              </div>
+            </div>
+          </div>
+
+          <!-- Multi-Country Selection Interactive Selector -->
+          <div style="background: rgba(10, 16, 30, 0.65); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: var(--radius-sm); padding: 12px 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 8px;">
+              <div style="display: flex; align-items: center; gap: 6px;">
+                <span style="font-size: 14px;">🌍</span>
+                <strong style="font-size: 12px; color: #38bdf8;">Countries Filter (Multiple Selection Allowed):</strong>
+                <span id="peopleSelectedCountryCountBadge" style="font-size: 11px; background: rgba(56,189,248,0.15); color: #38bdf8; border: 1px solid rgba(56,189,248,0.3); padding: 1px 8px; border-radius: 9999px; font-weight: 700;">Global (All Countries)</span>
+              </div>
+              <div style="display: flex; gap: 6px;">
+                <button type="button" class="btn btn-secondary" style="font-size: 11px; padding: 2px 8px; border-radius: 6px;" onclick="window.clearAllPeopleCountries()">Clear Selection</button>
+                <button type="button" class="btn btn-secondary" id="btnToggleCountryDropdown" style="font-size: 11px; padding: 2px 10px; border-radius: 6px; color: #38bdf8; border-color: rgba(56,189,248,0.4);" onclick="window.togglePeopleCountryDropdown()">
+                  <span id="txtToggleCountryDropdown">▾ Select Countries</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Active Selected Country Pills Bar -->
+            <div id="peopleSelectedCountryPills" style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center; min-height: 28px; margin-bottom: 8px;">
+              <span style="font-size: 11px; color: var(--text-dim); font-style: italic;">No specific country filter applied. Search will run globally.</span>
+            </div>
+
+            <!-- Quick Preset Chips -->
+            <div style="display: flex; gap: 5px; flex-wrap: wrap; align-items: center; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.06);">
+              <span style="font-size: 11px; color: var(--text-dim); margin-right: 4px;">Quick Select:</span>
+              <button type="button" class="btn btn-secondary" style="font-size: 11px; padding: 2px 8px; border-radius: 9999px; background: rgba(16,185,129,0.1); border-color: rgba(16,185,129,0.3); color: #34d399;" onclick="window.togglePeopleCountryGeo('103323778')">🇲🇽 Mexico</button>
+              <button type="button" class="btn btn-secondary" style="font-size: 11px; padding: 2px 8px; border-radius: 9999px;" onclick="window.togglePeopleCountryGeo('103644278')">🇺🇸 USA</button>
+              <button type="button" class="btn btn-secondary" style="font-size: 11px; padding: 2px 8px; border-radius: 9999px;" onclick="window.togglePeopleCountryGeo('101165590')">🇬🇧 UK</button>
+              <button type="button" class="btn btn-secondary" style="font-size: 11px; padding: 2px 8px; border-radius: 9999px;" onclick="window.togglePeopleCountryGeo('102713980')">🇮🇳 India</button>
+              <button type="button" class="btn btn-secondary" style="font-size: 11px; padding: 2px 8px; border-radius: 9999px;" onclick="window.togglePeopleCountryGeo('101282230')">🇩🇪 Germany</button>
+              <button type="button" class="btn btn-secondary" style="font-size: 11px; padding: 2px 8px; border-radius: 9999px;" onclick="window.togglePeopleCountryGeo('101174742')">🇨🇦 Canada</button>
+              <button type="button" class="btn btn-secondary" style="font-size: 11px; padding: 2px 8px; border-radius: 9999px;" onclick="window.togglePeopleCountryGeo('101452733')">🇦🇺 Australia</button>
+              <button type="button" class="btn btn-secondary" style="font-size: 11px; padding: 2px 8px; border-radius: 9999px;" onclick="window.togglePeopleCountryGeo('102454443')">🇸🇬 Singapore</button>
+              <button type="button" class="btn btn-secondary" style="font-size: 11px; padding: 2px 8px; border-radius: 9999px;" onclick="window.togglePeopleCountryGeo('104305776')">🇦🇪 UAE</button>
+              <button type="button" class="btn btn-secondary" style="font-size: 11px; padding: 2px 8px; border-radius: 9999px;" onclick="window.togglePeopleCountryGeo('106057199')">🇧🇷 Brazil</button>
+              <button type="button" class="btn btn-secondary" style="font-size: 11px; padding: 2px 8px; border-radius: 9999px;" onclick="window.togglePeopleCountryGeo('105646813')">🇪🇸 Spain</button>
+              <button type="button" class="btn btn-secondary" style="font-size: 11px; padding: 2px 8px; border-radius: 9999px;" onclick="window.togglePeopleCountryGeo('105015875')">🇫🇷 France</button>
+            </div>
+
+            <!-- Expandable Multi-Country Checkboxes Drawer -->
+            <div id="peopleCountryCheckboxesDrawer" style="display: none; margin-top: 12px; padding-top: 12px; border-top: 1px dashed rgba(56,189,248,0.25);">
+              <div style="display: flex; gap: 8px; margin-bottom: 10px; align-items: center;">
+                <input type="text" id="peopleCountrySearchFilter" placeholder="🔍 Filter countries..." style="flex: 1; padding: 6px 12px; font-size: 12px; background: rgba(15,23,42,0.9); border: 1px solid rgba(56,189,248,0.3); border-radius: 6px; color: #fff;" oninput="window.filterPeopleCountryList(this.value)">
+                <button type="button" class="btn btn-secondary" style="font-size: 11px; padding: 6px 10px;" onclick="window.togglePeopleCountryDropdown()">Done</button>
+              </div>
+              <div id="peopleCountryCheckboxesList" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 6px; max-height: 220px; overflow-y: auto; padding-right: 4px;">
+                <!-- Populated dynamically with all 68 countries -->
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Options Row: Network, Limits, Headless, Submit -->
+          <div style="display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap;">
+            <!-- Connection Degree -->
+            <div style="flex: 1; min-width: 150px;">
+              <label class="form-label" style="font-size: 12px; margin-bottom: 6px; color: var(--text-muted);">Network Degree</label>
+              <select id="peopleSearchNetwork" class="form-control" style="font-size: 13px; padding: 9px 12px; background: rgba(30, 41, 59, 0.85); border-color: rgba(56, 189, 248, 0.25);">
+                <option value="" selected>All Network Degrees</option>
+                <option value="F">1st Degree (Connected)</option>
+                <option value="S">2nd Degree</option>
+                <option value="O">3rd+ Degree</option>
+              </select>
+            </div>
+
+            <!-- Max Results -->
+            <div style="width: 140px;">
+              <label class="form-label" style="font-size: 12px; margin-bottom: 6px; color: var(--text-muted);">Max Results</label>
+              <select id="peopleSearchLimit" class="form-control" style="font-size: 13px; padding: 9px 12px; background: rgba(30, 41, 59, 0.85); border-color: rgba(56, 189, 248, 0.25);">
+                <option value="10">10 people</option>
+                <option value="20" selected>20 people</option>
+                <option value="30">30 people</option>
+                <option value="50">50 people</option>
+              </select>
+            </div>
+
+            <!-- Mode -->
+            <div style="display: flex; flex-direction: column; gap: 6px; align-items: flex-start; min-width: 110px;">
+              <label class="form-label" style="font-size: 12px; margin-bottom: 0; color: var(--text-muted);">Mode</label>
+              <div class="toggle-row" style="padding: 9px 12px; background: rgba(30, 41, 59, 0.5); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); gap: 8px; min-width: 110px;">
+                <span style="font-size: 12px; color: var(--text-muted);">Headless</span>
+                <label class="switch switch-sm"><input type="checkbox" id="peopleSearchHeadless" checked><span class="slider"></span></label>
+              </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div style="flex: 1; min-width: 180px;">
+              <button type="submit" class="btn btn-primary" id="btnPeopleSearch" style="width: 100%; padding: 10px 24px; background: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%); border-color: rgba(56, 189, 248, 0.6); box-shadow: 0 4px 18px rgba(14, 165, 233, 0.35); font-weight: 700; white-space: nowrap; color: #0f172a;">
+                <span id="btnPeopleSearchIcon">👥</span>
+                <span id="btnPeopleSearchText"> Search People</span>
+              </button>
+            </div>
+          </div>
+        </form>
       </div>
+
+      <!-- ── SHARED STATE PANELS ─────────────────────────────────────────────── -->
+      <div id="companySearchIdle" style="text-align: center; padding: 48px 16px; color: var(--text-muted); background: rgba(10, 16, 30, 0.4); border-radius: var(--radius-md); border: 1px dashed rgba(168, 85, 247, 0.2);">
+        <div style="font-size: 40px; margin-bottom: 14px;">&#128269;</div>
+        <h3 style="font-size: 16px; font-weight: 700; color: #ffffff; margin-bottom: 6px;">Search LinkedIn Companies or People</h3>
+        <p style="font-size: 13px; color: var(--text-dim); max-width: 480px; margin: 0 auto;">Select <strong style="color: #c084fc;">Companies</strong> to find organizations or <strong style="color: #38bdf8;">People</strong> to find professionals by designation and multi-country filters. Results are fetched live using your connected LinkedIn session.</p>
+      </div>
+
       <div id="companySearchLoading" style="display: none; text-align: center; padding: 48px 16px;">
         <div style="display: flex; flex-direction: column; align-items: center; gap: 14px;">
-          <div class="spinner" style="width: 40px; height: 40px; border-width: 3px; border-color: rgba(168, 85, 247, 0.2); border-top-color: #a855f7;"></div>
+          <div class="spinner" style="width: 40px; height: 40px; border-width: 3px; border-color: rgba(56, 189, 248, 0.2); border-top-color: #38bdf8;"></div>
           <div>
-            <h4 style="font-size: 15px; font-weight: 700; color: #c084fc; margin-bottom: 4px;">Searching LinkedIn Companies...</h4>
-            <p style="font-size: 12px; color: var(--text-dim);">Using your connected LinkedIn session. This may take 15&#8211;30 seconds.</p>
+            <h4 id="searchLoadingTitle" style="font-size: 15px; font-weight: 700; color: #38bdf8; margin-bottom: 4px;">Searching LinkedIn...</h4>
+            <p style="font-size: 12px; color: var(--text-dim);">Using your connected LinkedIn session. This may take 15&#8211;35 seconds.</p>
           </div>
         </div>
       </div>
+
       <div id="companySearchError" style="display: none; padding: 20px; background: rgba(244, 63, 94, 0.1); border: 1px solid rgba(244, 63, 94, 0.3); border-radius: var(--radius-md);">
         <div style="display: flex; align-items: flex-start; gap: 12px;">
           <span style="font-size: 22px;">&#10060;</span>
@@ -3382,11 +3540,14 @@
           </div>
         </div>
       </div>
+
       <div id="companySearchEmpty" style="display: none; text-align: center; padding: 48px 16px; background: rgba(10, 16, 30, 0.4); border-radius: var(--radius-md); border: 1px dashed var(--border-subtle);">
         <div style="font-size: 36px; margin-bottom: 12px;">&#128269;</div>
-        <h3 style="font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 6px;">No Companies Found</h3>
-        <p style="font-size: 13px; color: var(--text-dim); max-width: 400px; margin: 0 auto;">No company results matched. Try a different keyword.</p>
+        <h3 id="searchEmptyTitle" style="font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 6px;">No Results Found</h3>
+        <p id="searchEmptyMsg" style="font-size: 13px; color: var(--text-dim); max-width: 400px; margin: 0 auto;">No results matched your search criteria. Try adjusting keywords, designation, or country filters.</p>
       </div>
+
+      <!-- ── RESULTS PANEL 1: COMPANIES ──────────────────────────────────────── -->
       <div id="companySearchResults" style="display: none;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px;">
           <h3 id="companySearchResultsTitle" style="font-size: 14px; font-weight: 700; color: #c084fc;"></h3>
@@ -3394,6 +3555,19 @@
         </div>
         <div id="companyCardsGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(380px, 1fr)); gap: 20px;"></div>
       </div>
+
+      <!-- ── RESULTS PANEL 2: PEOPLE (PERSON → COMPANY → DESIGNATION → COUNTRY) ── -->
+      <div id="peopleSearchResults" style="display: none;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 8px; background: rgba(15, 23, 42, 0.6); padding: 12px 16px; border-radius: var(--radius-md); border: 1px solid rgba(56, 189, 248, 0.2);">
+          <div>
+            <h3 id="peopleSearchResultsTitle" style="font-size: 15px; font-weight: 700; color: #38bdf8; margin-bottom: 2px;"></h3>
+            <div id="peopleSearchResultsSubtitle" style="font-size: 12px; color: var(--text-muted);"></div>
+          </div>
+          <span style="font-size: 11px; color: var(--text-dim);">Live Faceted Search &bull; <span id="peopleSearchTimestamp" style="font-family: var(--font-mono);"></span></span>
+        </div>
+        <div id="peopleCardsGrid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 20px;"></div>
+      </div>
+    </section>
     </section>
 
     <!-- ── Admin Organization & Hierarchy Studio (Admin Only) ────────────────────────── -->
@@ -3910,58 +4084,346 @@
       }
     }
 
-    // ── LinkedIn Company Search Feature ──────────────────────────────
-    (function initCompanySearch() {
-      const formCompanySearch   = document.getElementById('formCompanySearch');
-      const companySearchInput  = document.getElementById('companySearchInput');
-      const companySearchLimit  = document.getElementById('companySearchLimit');
+    // ── LinkedIn Intelligence Search Studio (Companies & People) ─────
+    (function initSearchStudio() {
+      // Tabs & Forms
+      let currentSearchTab = 'companies'; // 'companies' | 'people'
+      const tabBtnCompanies = document.getElementById('tabBtnSearchCompanies');
+      const tabBtnPeople    = document.getElementById('tabBtnSearchPeople');
+      const panelFormCompanies = document.getElementById('panelFormCompanies');
+      const panelFormPeople    = document.getElementById('panelFormPeople');
+
+      // Company Search Form elements
+      const formCompanySearch     = document.getElementById('formCompanySearch');
+      const companySearchInput    = document.getElementById('companySearchInput');
+      const companySearchLimit    = document.getElementById('companySearchLimit');
       const companySearchHeadless = document.getElementById('companySearchHeadless');
-      const btnCompanySearch    = document.getElementById('btnCompanySearch');
+      const btnCompanySearch      = document.getElementById('btnCompanySearch');
+
+      // People Search Form elements
+      const formPeopleSearch      = document.getElementById('formPeopleSearch');
+      const peopleSearchKeywords  = document.getElementById('peopleSearchKeywords');
+      const peopleSearchDesignation = document.getElementById('peopleSearchDesignation');
+      const peopleSearchCompany   = document.getElementById('peopleSearchCompany');
+      const peopleSearchNetwork   = document.getElementById('peopleSearchNetwork');
+      const peopleSearchLimit     = document.getElementById('peopleSearchLimit');
+      const peopleSearchHeadless  = document.getElementById('peopleSearchHeadless');
+      const btnPeopleSearch       = document.getElementById('btnPeopleSearch');
+
+      // Shared Actions & Panels
       const btnClearCompanySearch = document.getElementById('btnClearCompanySearch');
       const btnRetryCompanySearch = document.getElementById('btnRetryCompanySearch');
+      const panelIdle             = document.getElementById('companySearchIdle');
+      const panelLoading          = document.getElementById('companySearchLoading');
+      const searchLoadingTitle    = document.getElementById('searchLoadingTitle');
+      const panelError            = document.getElementById('companySearchError');
+      const errorMsg              = document.getElementById('companySearchErrorMsg');
+      const panelEmpty            = document.getElementById('companySearchEmpty');
+      const searchEmptyTitle      = document.getElementById('searchEmptyTitle');
+      const searchEmptyMsg        = document.getElementById('searchEmptyMsg');
+      const resultBadge           = document.getElementById('companySearchResultBadge');
 
-      // State panels
-      const panelIdle     = document.getElementById('companySearchIdle');
-      const panelLoading  = document.getElementById('companySearchLoading');
-      const panelError    = document.getElementById('companySearchError');
-      const panelEmpty    = document.getElementById('companySearchEmpty');
-      const panelResults  = document.getElementById('companySearchResults');
-      const errorMsg      = document.getElementById('companySearchErrorMsg');
-      const cardsGrid     = document.getElementById('companyCardsGrid');
-      const resultBadge   = document.getElementById('companySearchResultBadge');
-      const resultsTitle  = document.getElementById('companySearchResultsTitle');
-      const timestamp     = document.getElementById('companySearchTimestamp');
+      // Company Results Panel
+      const panelCompanyResults   = document.getElementById('companySearchResults');
+      const companyCardsGrid      = document.getElementById('companyCardsGrid');
+      const companyResultsTitle   = document.getElementById('companySearchResultsTitle');
+      const companyTimestamp      = document.getElementById('companySearchTimestamp');
 
-      function showPanel(name) {
-        [panelIdle, panelLoading, panelError, panelEmpty, panelResults].forEach(p => { if (p) p.style.display = 'none'; });
-        const map = { idle: panelIdle, loading: panelLoading, error: panelError, empty: panelEmpty, results: panelResults };
-        if (map[name]) map[name].style.display = 'block';
-      }
+      // People Results Panel
+      const panelPeopleResults    = document.getElementById('peopleSearchResults');
+      const peopleCardsGrid       = document.getElementById('peopleCardsGrid');
+      const peopleResultsTitle    = document.getElementById('peopleSearchResultsTitle');
+      const peopleResultsSubtitle = document.getElementById('peopleSearchResultsSubtitle');
+      const peopleTimestamp       = document.getElementById('peopleSearchTimestamp');
 
-      function setSearchBusy(busy) {
-        if (!btnCompanySearch) return;
-        btnCompanySearch.disabled = busy;
-        const icon = document.getElementById('btnCompanySearchIcon');
-        const txt  = document.getElementById('btnCompanySearchText');
-        if (busy) {
-          if (icon) icon.textContent = '⏳';
-          if (txt)  txt.textContent  = ' Searching...';
-        } else {
-          if (icon) icon.textContent = '🔍';
-          if (txt)  txt.textContent  = ' Search Companies';
-        }
-      }
+      // Multi-Country Dataset (82+ Countries)
+      const ALL_COUNTRIES = [
+        { name: "Mexico", code: "MX", geoId: "103323778", flag: "🇲🇽" },
+        { name: "United States", code: "US", geoId: "103644278", flag: "🇺🇸" },
+        { name: "United Kingdom", code: "GB", geoId: "101165590", flag: "🇬🇧" },
+        { name: "India", code: "IN", geoId: "102713980", flag: "🇮🇳" },
+        { name: "Canada", code: "CA", geoId: "101174742", flag: "🇨🇦" },
+        { name: "Australia", code: "AU", geoId: "101452733", flag: "🇦🇺" },
+        { name: "Germany", code: "DE", geoId: "101282230", flag: "🇩🇪" },
+        { name: "France", code: "FR", geoId: "105015875", flag: "🇫🇷" },
+        { name: "Spain", code: "ES", geoId: "105646813", flag: "🇪🇸" },
+        { name: "Italy", code: "IT", geoId: "103350119", flag: "🇮🇹" },
+        { name: "Brazil", code: "BR", geoId: "106057199", flag: "🇧🇷" },
+        { name: "Singapore", code: "SG", geoId: "102454443", flag: "🇸🇬" },
+        { name: "United Arab Emirates", code: "AE", geoId: "104305776", flag: "🇦🇪" },
+        { name: "Saudi Arabia", code: "SA", geoId: "100459316", flag: "🇸🇦" },
+        { name: "Netherlands", code: "NL", geoId: "102890719", flag: "🇳🇱" },
+        { name: "Switzerland", code: "CH", geoId: "106693272", flag: "🇨🇭" },
+        { name: "Sweden", code: "SE", geoId: "105117694", flag: "🇸🇪" },
+        { name: "Poland", code: "PL", geoId: "105072130", flag: "🇵🇱" },
+        { name: "Ireland", code: "IE", geoId: "104738515", flag: "🇮🇪" },
+        { name: "Japan", code: "JP", geoId: "101355337", flag: "🇯🇵" },
+        { name: "China", code: "CN", geoId: "102890883", flag: "🇨🇳" },
+        { name: "South Korea", code: "KR", geoId: "105149562", flag: "🇰🇷" },
+        { name: "Israel", code: "IL", geoId: "101620260", flag: "🇮🇱" },
+        { name: "South Africa", code: "ZA", geoId: "104035573", flag: "🇿🇦" },
+        { name: "Argentina", code: "AR", geoId: "100446943", flag: "🇦🇷" },
+        { name: "Chile", code: "CL", geoId: "104621616", flag: "🇨🇱" },
+        { name: "Colombia", code: "CO", geoId: "100876405", flag: "🇨🇴" },
+        { name: "Costa Rica", code: "CR", geoId: "101739942", flag: "🇨🇷" },
+        { name: "Dominican Republic", code: "DO", geoId: "105057336", flag: "🇩🇴" },
+        { name: "Ecuador", code: "EC", geoId: "106373116", flag: "🇪🇨" },
+        { name: "Guatemala", code: "GT", geoId: "104445899", flag: "🇬🇹" },
+        { name: "Panama", code: "PA", geoId: "100808673", flag: "🇵🇦" },
+        { name: "Peru", code: "PE", geoId: "102927786", flag: "🇵🇪" },
+        { name: "Uruguay", code: "UY", geoId: "100867946", flag: "🇺🇾" },
+        { name: "Austria", code: "AT", geoId: "103883259", flag: "🇦🇹" },
+        { name: "Belgium", code: "BE", geoId: "100565514", flag: "🇧🇪" },
+        { name: "Bulgaria", code: "BG", geoId: "105333783", flag: "🇧🇬" },
+        { name: "Croatia", code: "HR", geoId: "104688944", flag: "🇭🇷" },
+        { name: "Czech Republic", code: "CZ", geoId: "104508036", flag: "🇨🇿" },
+        { name: "Denmark", code: "DK", geoId: "104514075", flag: "🇩🇰" },
+        { name: "Estonia", code: "EE", geoId: "102974008", flag: "🇪🇪" },
+        { name: "Finland", code: "FI", geoId: "100456013", flag: "🇫🇮" },
+        { name: "Greece", code: "GR", geoId: "104677530", flag: "🇬🇷" },
+        { name: "Hungary", code: "HU", geoId: "100288700", flag: "🇭🇺" },
+        { name: "Iceland", code: "IS", geoId: "105238872", flag: "🇮🇸" },
+        { name: "Latvia", code: "LV", geoId: "104341318", flag: "🇱🇻" },
+        { name: "Lithuania", code: "LT", geoId: "101464403", flag: "🇱🇹" },
+        { name: "Luxembourg", code: "LU", geoId: "104042105", flag: "🇱🇺" },
+        { name: "Norway", code: "NO", geoId: "103819153", flag: "🇳🇴" },
+        { name: "Portugal", code: "PT", geoId: "100364837", flag: "🇵🇹" },
+        { name: "Romania", code: "RO", geoId: "106670623", flag: "🇷🇴" },
+        { name: "Slovakia", code: "SK", geoId: "103119917", flag: "🇸🇰" },
+        { name: "Slovenia", code: "SI", geoId: "106137034", flag: "🇸🇮" },
+        { name: "Turkey", code: "TR", geoId: "102105699", flag: "🇹🇷" },
+        { name: "Ukraine", code: "UA", geoId: "102264497", flag: "🇺🇦" },
+        { name: "Bangladesh", code: "BD", geoId: "106215326", flag: "🇧🇩" },
+        { name: "Hong Kong", code: "HK", geoId: "103291313", flag: "🇭🇰" },
+        { name: "Indonesia", code: "ID", geoId: "102478259", flag: "🇮🇩" },
+        { name: "Malaysia", code: "MY", geoId: "106808692", flag: "🇲🇾" },
+        { name: "New Zealand", code: "NZ", geoId: "105490917", flag: "🇳🇿" },
+        { name: "Pakistan", code: "PK", geoId: "101022442", flag: "🇵🇰" },
+        { name: "Philippines", code: "PH", geoId: "103121230", flag: "🇵🇭" },
+        { name: "Sri Lanka", code: "LK", geoId: "100446352", flag: "🇱🇰" },
+        { name: "Taiwan", code: "TW", geoId: "104187078", flag: "🇹🇼" },
+        { name: "Thailand", code: "TH", geoId: "105146118", flag: "🇹🇭" },
+        { name: "Vietnam", code: "VN", geoId: "104195383", flag: "🇻🇳" },
+        { name: "Bahrain", code: "BH", geoId: "100425729", flag: "🇧🇭" },
+        { name: "Egypt", code: "EG", geoId: "106155005", flag: "🇪🇬" },
+        { name: "Ghana", code: "GH", geoId: "105769538", flag: "🇬🇭" },
+        { name: "Jordan", code: "JO", geoId: "103710677", flag: "🇯🇴" },
+        { name: "Kenya", code: "KE", geoId: "100710459", flag: "🇰🇪" },
+        { name: "Kuwait", code: "KW", geoId: "103239229", flag: "🇰🇼" },
+        { name: "Lebanon", code: "LB", geoId: "101834488", flag: "🇱🇧" },
+        { name: "Morocco", code: "MA", geoId: "102787409", flag: "🇲🇦" },
+        { name: "Nigeria", code: "NG", geoId: "105365761", flag: "🇳🇬" },
+        { name: "Oman", code: "OM", geoId: "103619019", flag: "🇴🇲" },
+        { name: "Qatar", code: "QA", geoId: "104170880", flag: "🇶🇦" }
+      ];
+
+      // Multi-Country Selection State
+      const selectedPeopleCountryGeoIds = new Set();
 
       function escapeHtml(str) {
         if (!str) return '';
-        return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+        return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g, '&#39;');
       }
 
+      function showPanel(name) {
+        const panels = [panelIdle, panelLoading, panelError, panelEmpty, panelCompanyResults, panelPeopleResults];
+        panels.forEach(p => { if (p) p.style.display = 'none'; });
+
+        if (name === 'idle') {
+          if (panelIdle) panelIdle.style.display = 'block';
+        } else if (name === 'loading') {
+          if (panelLoading) panelLoading.style.display = 'block';
+        } else if (name === 'error') {
+          if (panelError) panelError.style.display = 'block';
+        } else if (name === 'empty') {
+          if (panelEmpty) panelEmpty.style.display = 'block';
+        } else if (name === 'company_results') {
+          if (panelCompanyResults) panelCompanyResults.style.display = 'block';
+        } else if (name === 'people_results') {
+          if (panelPeopleResults) panelPeopleResults.style.display = 'block';
+        }
+      }
+
+      // ── Tab Switcher Controller ─────────────────────────────────────
+      window.switchSearchTab = function(tab) {
+        currentSearchTab = tab;
+        if (tab === 'companies') {
+          if (tabBtnCompanies) {
+            tabBtnCompanies.className = 'tab-btn active';
+            tabBtnCompanies.style.background = 'linear-gradient(135deg, rgba(168,85,247,0.3) 0%, rgba(124,58,237,0.3) 100%)';
+            tabBtnCompanies.style.borderColor = 'rgba(168,85,247,0.6)';
+            tabBtnCompanies.style.color = '#fff';
+          }
+          if (tabBtnPeople) {
+            tabBtnPeople.className = 'tab-btn';
+            tabBtnPeople.style.background = 'transparent';
+            tabBtnPeople.style.borderColor = 'transparent';
+            tabBtnPeople.style.color = 'var(--text-muted)';
+          }
+          if (panelFormCompanies) panelFormCompanies.style.display = 'block';
+          if (panelFormPeople) panelFormPeople.style.display = 'none';
+
+          // Show company results if already populated
+          if (companyCardsGrid && companyCardsGrid.children.length > 0) {
+            showPanel('company_results');
+            if (btnClearCompanySearch) btnClearCompanySearch.style.display = 'inline-flex';
+          } else if (!panelLoading || panelLoading.style.display === 'none') {
+            if (peopleCardsGrid && peopleCardsGrid.children.length === 0) showPanel('idle');
+          }
+        } else if (tab === 'people') {
+          if (tabBtnPeople) {
+            tabBtnPeople.className = 'tab-btn active';
+            tabBtnPeople.style.background = 'linear-gradient(135deg, rgba(14,165,233,0.3) 0%, rgba(56,189,248,0.3) 100%)';
+            tabBtnPeople.style.borderColor = 'rgba(56,189,248,0.6)';
+            tabBtnPeople.style.color = '#fff';
+          }
+          if (tabBtnCompanies) {
+            tabBtnCompanies.className = 'tab-btn';
+            tabBtnCompanies.style.background = 'transparent';
+            tabBtnCompanies.style.borderColor = 'transparent';
+            tabBtnCompanies.style.color = 'var(--text-muted)';
+          }
+          if (panelFormPeople) panelFormPeople.style.display = 'block';
+          if (panelFormCompanies) panelFormCompanies.style.display = 'none';
+
+          // Show people results if already populated
+          if (peopleCardsGrid && peopleCardsGrid.children.length > 0) {
+            showPanel('people_results');
+            if (btnClearCompanySearch) btnClearCompanySearch.style.display = 'inline-flex';
+          } else if (!panelLoading || panelLoading.style.display === 'none') {
+            if (companyCardsGrid && companyCardsGrid.children.length === 0) showPanel('idle');
+          }
+        }
+      };
+
+      // ── Multi-Country Selection Manager for People Search ───────────
+      function initPeopleCountryCheckboxes() {
+        const container = document.getElementById('peopleCountryCheckboxesList');
+        if (!container) return;
+
+        container.innerHTML = ALL_COUNTRIES.map(c => `
+          <label id="countryItem_${c.geoId}" class="country-checkbox-item" style="display: flex; align-items: center; gap: 8px; padding: 6px 10px; background: rgba(15,23,42,0.7); border: 1px solid rgba(255,255,255,0.06); border-radius: 6px; cursor: pointer; font-size: 12px; transition: all 0.15s ease;"
+            onmouseenter="this.style.borderColor='rgba(56,189,248,0.4)'; this.style.background='rgba(14,165,233,0.1)';"
+            onmouseleave="this.style.borderColor=selectedPeopleCountryGeoIds.has('${c.geoId}')?'rgba(56,189,248,0.7)':'rgba(255,255,255,0.06)'; this.style.background=selectedPeopleCountryGeoIds.has('${c.geoId}')?'rgba(14,165,233,0.18)':'rgba(15,23,42,0.7)';">
+            <input type="checkbox" id="chkCountry_${c.geoId}" value="${c.geoId}" onchange="window.togglePeopleCountryGeo('${c.geoId}')" style="accent-color: #38bdf8; cursor: pointer;">
+            <span style="font-size: 14px;">${c.flag}</span>
+            <span style="flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: #e2e8f0;" title="${escapeHtml(c.name)}">${escapeHtml(c.name)}</span>
+            <span style="font-family: var(--font-mono); font-size: 10px; color: var(--text-dim);">${c.geoId}</span>
+          </label>
+        `).join('');
+      }
+
+      function updateCountryPillsDisplay() {
+        const pillsContainer = document.getElementById('peopleSelectedCountryPills');
+        const countBadge = document.getElementById('peopleSelectedCountryCountBadge');
+        if (!pillsContainer || !countBadge) return;
+
+        if (selectedPeopleCountryGeoIds.size === 0) {
+          pillsContainer.innerHTML = `<span style="font-size: 11px; color: var(--text-dim); font-style: italic;">No specific country filter applied. Search will run globally.</span>`;
+          countBadge.textContent = 'Global (All Countries)';
+          countBadge.style.color = '#38bdf8';
+          countBadge.style.borderColor = 'rgba(56,189,248,0.3)';
+          countBadge.style.background = 'rgba(56,189,248,0.15)';
+          return;
+        }
+
+        const selectedCountries = ALL_COUNTRIES.filter(c => selectedPeopleCountryGeoIds.has(c.geoId));
+        pillsContainer.innerHTML = selectedCountries.map(c => `
+          <span style="display: inline-flex; align-items: center; gap: 5px; background: linear-gradient(135deg, rgba(14,165,233,0.2) 0%, rgba(56,189,248,0.2) 100%); border: 1px solid rgba(56,189,248,0.5); border-radius: 9999px; padding: 2px 10px; font-size: 11px; font-weight: 600; color: #bae6fd;">
+            <span>${c.flag}</span>
+            <span>${escapeHtml(c.name)}</span>
+            <button type="button" onclick="window.togglePeopleCountryGeo('${c.geoId}')" style="background: none; border: none; color: #38bdf8; font-size: 12px; cursor: pointer; padding: 0 0 0 4px; line-height: 1;" title="Remove ${escapeHtml(c.name)}">&times;</button>
+          </span>
+        `).join('');
+
+        countBadge.textContent = `${selectedPeopleCountryGeoIds.size} Countr${selectedPeopleCountryGeoIds.size === 1 ? 'y' : 'ies'} Selected`;
+        countBadge.style.color = '#34d399';
+        countBadge.style.borderColor = 'rgba(52,211,153,0.4)';
+        countBadge.style.background = 'rgba(52,211,153,0.18)';
+      }
+
+      window.togglePeopleCountryGeo = function(geoId) {
+        if (!geoId) return;
+        const cleanGeoId = String(geoId).trim();
+        if (selectedPeopleCountryGeoIds.has(cleanGeoId)) {
+          selectedPeopleCountryGeoIds.delete(cleanGeoId);
+        } else {
+          selectedPeopleCountryGeoIds.add(cleanGeoId);
+        }
+
+        // Sync checkbox in drawer if rendered
+        const chk = document.getElementById(`chkCountry_${cleanGeoId}`);
+        if (chk) chk.checked = selectedPeopleCountryGeoIds.has(cleanGeoId);
+
+        // Sync container item highlight
+        const item = document.getElementById(`countryItem_${cleanGeoId}`);
+        if (item) {
+          if (selectedPeopleCountryGeoIds.has(cleanGeoId)) {
+            item.style.borderColor = 'rgba(56,189,248,0.7)';
+            item.style.background = 'rgba(14,165,233,0.18)';
+          } else {
+            item.style.borderColor = 'rgba(255,255,255,0.06)';
+            item.style.background = 'rgba(15,23,42,0.7)';
+          }
+        }
+
+        updateCountryPillsDisplay();
+      };
+
+      window.clearAllPeopleCountries = function() {
+        selectedPeopleCountryGeoIds.clear();
+        ALL_COUNTRIES.forEach(c => {
+          const chk = document.getElementById(`chkCountry_${c.geoId}`);
+          if (chk) chk.checked = false;
+          const item = document.getElementById(`countryItem_${c.geoId}`);
+          if (item) {
+            item.style.borderColor = 'rgba(255,255,255,0.06)';
+            item.style.background = 'rgba(15,23,42,0.7)';
+          }
+        });
+        updateCountryPillsDisplay();
+      };
+
+      window.togglePeopleCountryDropdown = function() {
+        const drawer = document.getElementById('peopleCountryCheckboxesDrawer');
+        const txt = document.getElementById('txtToggleCountryDropdown');
+        if (!drawer) return;
+        const isClosed = drawer.style.display === 'none' || !drawer.style.display;
+        if (isClosed) {
+          drawer.style.display = 'block';
+          if (txt) txt.textContent = '▴ Close Country List';
+          const filterInput = document.getElementById('peopleCountrySearchFilter');
+          if (filterInput) filterInput.focus();
+        } else {
+          drawer.style.display = 'none';
+          if (txt) txt.textContent = '▾ Select Countries';
+        }
+      };
+
+      window.filterPeopleCountryList = function(val) {
+        const query = (val || '').toLowerCase().trim();
+        ALL_COUNTRIES.forEach(c => {
+          const item = document.getElementById(`countryItem_${c.geoId}`);
+          if (!item) return;
+          const match = c.name.toLowerCase().includes(query) || c.code.toLowerCase().includes(query) || c.geoId.includes(query);
+          item.style.display = match ? 'flex' : 'none';
+        });
+      };
+
+      window.setPeopleDesignationPreset = function(title) {
+        const input = document.getElementById('peopleSearchDesignation');
+        if (input) {
+          input.value = title;
+          input.focus();
+        }
+      };
+
+      // ── Company Search Card Renderer ────────────────────────────────
       function renderCompanyCard(company, index) {
         const rank = (index !== undefined) ? index + 1 : 1;
         const rankBadge = rank === 1
           ? `<span style="background: linear-gradient(135deg, rgba(234,179,8,0.2) 0%, rgba(245,158,11,0.2) 100%); color: #fde047; border: 1px solid rgba(234,179,8,0.4); font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.5px;">🏆 #1 Top Result</span>`
-          : `<span style="background: linear-gradient(135deg, rgba(148,163,184,0.2) 0%, rgba(99,102,241,0.2) 100%); color: #cbd5e1; border: 1px solid rgba(148,163,184,0.3); font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.5px;">🥈 #2 Result</span>`;
+          : `<span style="background: linear-gradient(135deg, rgba(148,163,184,0.2) 0%, rgba(99,102,241,0.2) 100%); color: #cbd5e1; border: 1px solid rgba(148,163,184,0.3); font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 9999px; text-transform: uppercase; letter-spacing: 0.5px;">🥈 #${rank} Result</span>`;
 
         const logoHtml = company.logoUrl
           ? `<img src="${escapeHtml(company.logoUrl)}" alt="${escapeHtml(company.name)} logo" style="width: 64px; height: 64px; border-radius: 12px; object-fit: cover; border: 1px solid rgba(255,255,255,0.12); background: rgba(255,255,255,0.06); box-shadow: 0 4px 12px rgba(0,0,0,0.3);" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
@@ -3983,7 +4445,6 @@
             <p style="font-size: 12px; color: var(--text-dim); line-height: 1.6; margin: 0; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden;" title="${escapeHtml(company.description || '')}">${descText}</p>
           </div>`;
 
-        // Scale & Metrics Row
         const employeesVal = company.employeeCount || 'Not specified';
         const companySizeVal = company.companySize || 'Not specified';
         const followersVal = company.followers || 'Not specified';
@@ -4004,7 +4465,6 @@
             </div>
           </div>`;
 
-        // Details metadata items
         const metaItems = [];
         if (company.companyId) {
           metaItems.push(`
@@ -4038,36 +4498,11 @@
               <span style="color: #e2e8f0;">${escapeHtml(company.industry)}</span>
             </div>`);
         }
-        if (company.founded) {
-          metaItems.push(`
-            <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted);">
-              <span style="color: #fbbf24;">📅</span>
-              <strong style="color: #94a3b8; font-size: 11px;">Founded:</strong>
-              <span style="color: #e2e8f0;">${escapeHtml(company.founded)}</span>
-            </div>`);
-        }
-        if (company.type) {
-          metaItems.push(`
-            <div style="display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted);">
-              <span style="color: #a78bfa;">🏷️</span>
-              <strong style="color: #94a3b8; font-size: 11px;">Type:</strong>
-              <span style="color: #e2e8f0;">${escapeHtml(company.type)}</span>
-            </div>`);
-        }
-        if (company.specialties) {
-          metaItems.push(`
-            <div style="grid-column: 1 / -1; display: flex; align-items: flex-start; gap: 6px; font-size: 12px; color: var(--text-muted);">
-              <span style="color: #f472b6;">💡</span>
-              <strong style="color: #94a3b8; font-size: 11px; flex-shrink: 0;">Specialties:</strong>
-              <span style="color: #e2e8f0; line-height: 1.4;">${escapeHtml(company.specialties)}</span>
-            </div>`);
-        }
 
         const metaSectionHtml = metaItems.length > 0
           ? `<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; background: rgba(10,16,30,0.5); padding: 10px 12px; border-radius: var(--radius-sm); border: 1px solid rgba(255,255,255,0.04); margin-bottom: 14px;">${metaItems.join('')}</div>`
           : '';
 
-        // Action Buttons
         const websiteBtn = company.website
           ? `<a href="${escapeHtml(company.website.startsWith('http') ? company.website : 'https://' + company.website)}" target="_blank" rel="noopener noreferrer"
                style="padding: 8px 14px; background: rgba(56,189,248,0.15); border: 1px solid rgba(56,189,248,0.35); border-radius: var(--radius-sm); font-size: 12px; font-weight: 600; color: #38bdf8; text-decoration: none; display: inline-flex; align-items: center; gap: 5px; transition: background 0.15s ease;"
@@ -4083,7 +4518,6 @@
             onmouseleave="this.style.transform='translateY(0)'; this.style.borderColor='rgba(168,85,247,0.3)'; this.style.boxShadow='0 4px 20px rgba(0,0,0,0.25)';">
             
             <div>
-              <!-- Header with Rank, Logo & Title -->
               <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; gap: 8px;">
                 <div style="display: flex; gap: 14px; align-items: flex-start; flex: 1; min-width: 0;">
                   <div style="flex-shrink: 0;">${logoHtml}</div>
@@ -4099,17 +4533,12 @@
                 <div>${rankBadge}</div>
               </div>
 
-              <!-- About Description -->
               ${descHtml}
-
-              <!-- Scale & Metric Badges -->
               ${metricsHtml}
-
-              <!-- Metadata Grid -->
               ${metaSectionHtml}
             </div>
 
-            <!-- Footer Action Buttons -->
+            <!-- Action buttons & In-Card Finder -->
             <div style="display: flex; gap: 8px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 14px; margin-top: 6px; flex-wrap: wrap;">
               <button type="button"
                 id="btnTogglePeopleDrawer-${rank}"
@@ -4128,9 +4557,7 @@
               ${websiteBtn}
               <button type="button"
                 onclick="navigator.clipboard.writeText('${escapeHtml(company.companyUrl)}').then(()=>window.__showToast&&window.__showToast('LinkedIn URL copied!','📋')).catch(()=>{})"
-                style="padding: 8px 12px; background: rgba(30,41,59,0.8); border: 1px solid rgba(255,255,255,0.12); border-radius: var(--radius-sm); font-size: 12px; color: var(--text-muted); cursor: pointer; transition: background 0.15s ease; display: inline-flex; align-items: center; justify-content: center;"
-                onmouseenter="this.style.background='rgba(51,65,85,0.9)';"
-                onmouseleave="this.style.background='rgba(30,41,59,0.8)';"
+                style="padding: 8px 12px; background: rgba(30,41,59,0.8); border: 1px solid rgba(255,255,255,0.12); border-radius: var(--radius-sm); font-size: 12px; color: var(--text-muted); cursor: pointer; display: inline-flex; align-items: center; justify-content: center;"
                 title="Copy LinkedIn URL">📋</button>
             </div>
 
@@ -4149,7 +4576,6 @@
 
               <!-- Filter Form -->
               <div style="background: rgba(10,16,30,0.6); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 12px; margin-bottom: 12px;">
-                <!-- Designation Input & Quick Presets -->
                 <div style="margin-bottom: 10px;">
                   <label class="form-label" style="font-size: 11px; color: #38bdf8; margin-bottom: 4px; display: flex; justify-content: space-between;">
                     <span>Designation / Job Title</span>
@@ -4157,7 +4583,6 @@
                   </label>
                   <input type="text" id="cardPeoplePosition-${rank}" class="form-input" placeholder="e.g. Account Manager, HR Manager, Sales..." style="font-size: 12px; padding: 7px 10px; width: 100%; border-color: rgba(14,165,233,0.3); background: rgba(15,23,42,0.85);" onkeydown="if(event.key==='Enter'){event.preventDefault(); window.runCardPeopleSearch(${rank}, '${escapeHtml(company.companyId || '')}', '${escapeHtml(company.name || '')}');}">
                   
-                  <!-- Preset Chips -->
                   <div style="display: flex; gap: 5px; flex-wrap: wrap; margin-top: 6px;">
                     <button type="button" class="btn btn-secondary" style="font-size: 10px; padding: 2px 7px; border-radius: 9999px;" onclick="window.setCardPosition(${rank}, 'Account Manager')">Account Manager</button>
                     <button type="button" class="btn btn-secondary" style="font-size: 10px; padding: 2px 7px; border-radius: 9999px;" onclick="window.setCardPosition(${rank}, 'Software Engineer')">Software Engineer</button>
@@ -4167,7 +4592,6 @@
                   </div>
                 </div>
 
-                <!-- Name & Network Row -->
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
                   <div>
                     <label class="form-label" style="font-size: 11px; color: var(--text-muted); margin-bottom: 4px;">Person Name (Optional)</label>
@@ -4184,7 +4608,6 @@
                   </div>
                 </div>
 
-                <!-- Submit Action Row -->
                 <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap;">
                   <span style="font-size: 11px; color: var(--text-dim);">Fetches all available matching employees across pages</span>
                   <button type="button" id="btnCardSearchPeople-${rank}" onclick="window.runCardPeopleSearch(${rank}, '${escapeHtml(company.companyId || '')}', '${escapeHtml(company.name || '')}')"
@@ -4211,10 +4634,166 @@
           </div>`;
       }
 
+      // ── People Search Card Renderer (Person → Company → Designation → Country) ──
+      function renderPersonCard(person, index) {
+        const rank = (index !== undefined) ? index + 1 : 1;
+        const is1st = person.degree === '1st' || person.connectionStatus === 'connected';
+        const isPending = person.connectionStatus === 'pending';
+
+        let degreeBadge = '';
+        if (is1st) {
+          degreeBadge = `<span style="font-size: 10px; font-weight: 700; color: #34d399; background: rgba(52,211,153,0.15); border: 1px solid rgba(52,211,153,0.35); padding: 2px 8px; border-radius: 9999px;">● 1st • Connected</span>`;
+        } else if (person.degree === '2nd') {
+          degreeBadge = `<span style="font-size: 10px; font-weight: 700; color: #818cf8; background: rgba(99,102,241,0.15); border: 1px solid rgba(99,102,241,0.35); padding: 2px 8px; border-radius: 9999px;">● 2nd Degree</span>`;
+        } else {
+          degreeBadge = `<span style="font-size: 10px; font-weight: 700; color: #94a3b8; background: rgba(148,163,184,0.15); border: 1px solid rgba(148,163,184,0.25); padding: 2px 8px; border-radius: 9999px;">● 3rd+ Degree</span>`;
+        }
+
+        const avatarHtml = person.photoUrl
+          ? `<img src="${escapeHtml(person.photoUrl)}" referrerpolicy="no-referrer" alt="${escapeHtml(person.name)}" style="width: 58px; height: 58px; border-radius: 50%; object-fit: cover; border: 2px solid rgba(56,189,248,0.3); background: rgba(15,23,42,0.8); flex-shrink: 0; box-shadow: 0 4px 12px rgba(0,0,0,0.3);" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+             <div style="display: none; width: 58px; height: 58px; border-radius: 50%; background: linear-gradient(135deg, rgba(14,165,233,0.35) 0%, rgba(99,102,241,0.35) 100%); align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; border: 2px solid rgba(56,189,248,0.3);">👤</div>`
+          : `<div style="width: 58px; height: 58px; border-radius: 50%; background: linear-gradient(135deg, rgba(14,165,233,0.35) 0%, rgba(99,102,241,0.35) 100%); display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0; border: 2px solid rgba(56,189,248,0.3);">👤</div>`;
+
+        const personObjEncoded = encodeURIComponent(JSON.stringify(person));
+
+        // Action Buttons
+        let actionBtn = '';
+        if (is1st) {
+          actionBtn = `
+            <button type="button" onclick="window.openPeopleMessageModal(JSON.parse(decodeURIComponent('${personObjEncoded}')))"
+              style="padding: 8px 14px; background: linear-gradient(135deg, rgba(14,165,233,0.35) 0%, rgba(56,189,248,0.35) 100%); border: 1px solid rgba(56,189,248,0.5); border-radius: var(--radius-sm); font-size: 12px; font-weight: 700; color: #38bdf8; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;">
+              💬 Message
+            </button>`;
+        } else if (isPending) {
+          actionBtn = `
+            <span style="padding: 8px 12px; background: rgba(234,179,8,0.12); border: 1px solid rgba(234,179,8,0.3); border-radius: var(--radius-sm); font-size: 12px; font-weight: 600; color: #fde047; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px;">
+              ⏳ Pending Invite
+            </span>`;
+        } else {
+          actionBtn = `
+            <button type="button" onclick="window.openPeopleConnectModal(JSON.parse(decodeURIComponent('${personObjEncoded}')))"
+              style="padding: 8px 14px; background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%); border: 1px solid rgba(168,85,247,0.5); border-radius: var(--radius-sm); font-size: 12px; font-weight: 700; color: #ffffff; cursor: pointer; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap; box-shadow: 0 4px 12px rgba(124,58,237,0.25);">
+              🤝 Connect
+            </button>`;
+        }
+
+        const countryFlag = person.countryFlag || '📍';
+        const countryLabel = person.country || 'Global';
+        const companyLabel = person.companyName || 'Not Specified';
+        const designationLabel = person.designation || 'Professional';
+
+        return `
+          <div class="glass-card" style="padding: 20px; border-radius: var(--radius-md); border: 1px solid rgba(56,189,248,0.3); background: linear-gradient(135deg, rgba(14,165,233,0.05) 0%, rgba(15,23,42,0.9) 100%); transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 4px 20px rgba(0,0,0,0.25);"
+            onmouseenter="this.style.transform='translateY(-3px)'; this.style.borderColor='rgba(56,189,248,0.6)'; this.style.boxShadow='0 8px 28px rgba(14,165,233,0.18)';"
+            onmouseleave="this.style.transform='translateY(0)'; this.style.borderColor='rgba(56,189,248,0.3)'; this.style.boxShadow='0 4px 20px rgba(0,0,0,0.25)';">
+            
+            <div>
+              <!-- Header: Avatar, Name & Degree -->
+              <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; gap: 10px;">
+                <div style="display: flex; gap: 12px; align-items: center; min-width: 0; flex: 1;">
+                  ${avatarHtml}
+                  <div style="min-width: 0; flex: 1;">
+                    <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                      <a href="${escapeHtml(person.profileUrl)}" target="_blank" rel="noopener noreferrer"
+                        style="font-size: 16px; font-weight: 800; color: #ffffff; text-decoration: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 220px;"
+                        onmouseenter="this.style.textDecoration='underline'" onmouseleave="this.style.textDecoration='none'">
+                        ${escapeHtml(person.name)}
+                      </a>
+                      ${degreeBadge}
+                    </div>
+                    <div style="font-size: 12px; color: var(--text-dim); margin-top: 2px; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;" title="${escapeHtml(person.headline || '')}">
+                      ${escapeHtml(person.headline || designationLabel)}
+                    </div>
+                  </div>
+                </div>
+                <span style="font-family: var(--font-mono); font-size: 11px; background: rgba(56,189,248,0.15); color: #38bdf8; border: 1px solid rgba(56,189,248,0.3); padding: 2px 7px; border-radius: 6px; font-weight: 600;">#${rank}</span>
+              </div>
+
+              <!-- ── VISUAL FLOW BANNER: Person → Company → Designation → Country ── -->
+              <div style="background: rgba(10, 16, 30, 0.7); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 8px; padding: 10px 12px; margin: 12px 0; display: flex; flex-direction: column; gap: 6px;">
+                <div style="font-size: 10px; font-weight: 700; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 4px;">
+                  <span>⚡ Relationship Flow</span>
+                  <span style="color: var(--text-dim); font-weight: normal;">(Person → Company → Designation → Country)</span>
+                </div>
+                <div style="display: flex; align-items: center; flex-wrap: wrap; gap: 6px; font-size: 11px;">
+                  <!-- Person -->
+                  <span style="display: inline-flex; align-items: center; gap: 4px; background: rgba(56,189,248,0.15); border: 1px solid rgba(56,189,248,0.35); padding: 3px 8px; border-radius: 6px; color: #bae6fd; font-weight: 700;">
+                    <span>👤</span>
+                    <span>${escapeHtml(person.name)}</span>
+                  </span>
+                  
+                  <span style="color: #64748b; font-weight: 700;">➔</span>
+
+                  <!-- Company -->
+                  <span style="display: inline-flex; align-items: center; gap: 4px; background: rgba(168,85,247,0.15); border: 1px solid rgba(168,85,247,0.35); padding: 3px 8px; border-radius: 6px; color: #e9d5ff; font-weight: 700;">
+                    <span>🏢</span>
+                    <span>${escapeHtml(companyLabel)}</span>
+                  </span>
+
+                  <span style="color: #64748b; font-weight: 700;">➔</span>
+
+                  <!-- Designation -->
+                  <span style="display: inline-flex; align-items: center; gap: 4px; background: rgba(234,179,8,0.15); border: 1px solid rgba(234,179,8,0.35); padding: 3px 8px; border-radius: 6px; color: #fef08a; font-weight: 700;">
+                    <span>💼</span>
+                    <span>${escapeHtml(designationLabel)}</span>
+                  </span>
+
+                  <span style="color: #64748b; font-weight: 700;">➔</span>
+
+                  <!-- Country -->
+                  <span style="display: inline-flex; align-items: center; gap: 4px; background: rgba(52,211,153,0.15); border: 1px solid rgba(52,211,153,0.35); padding: 3px 8px; border-radius: 6px; color: #a7f3d0; font-weight: 700;">
+                    <span>${countryFlag}</span>
+                    <span>${escapeHtml(countryLabel)}</span>
+                  </span>
+                </div>
+              </div>
+
+              <!-- Key Details Grid -->
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; background: rgba(15,23,42,0.6); padding: 10px 12px; border-radius: var(--radius-sm); border: 1px solid rgba(255,255,255,0.04); margin-bottom: 12px;">
+                <div style="font-size: 11px;">
+                  <span style="color: #c084fc; font-weight: 700;">🏢 Company:</span>
+                  <div style="color: #ffffff; font-weight: 600; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(companyLabel)}">${escapeHtml(companyLabel)}</div>
+                </div>
+                <div style="font-size: 11px;">
+                  <span style="color: #fbbf24; font-weight: 700;">💼 Designation:</span>
+                  <div style="color: #ffffff; font-weight: 600; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(designationLabel)}">${escapeHtml(designationLabel)}</div>
+                </div>
+                <div style="font-size: 11px;">
+                  <span style="color: #34d399; font-weight: 700;">📍 Location:</span>
+                  <div style="color: #ffffff; font-weight: 600; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(person.location || countryLabel)}">
+                    ${countryFlag} ${escapeHtml(person.location || countryLabel)}
+                  </div>
+                </div>
+                ${person.mutualConnectionsText ? `
+                  <div style="font-size: 11px;">
+                    <span style="color: #38bdf8; font-weight: 700;">👥 Mutual Connections:</span>
+                    <div style="color: #bae6fd; font-weight: 600; margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" title="${escapeHtml(person.mutualConnectionsText)}">${escapeHtml(person.mutualConnectionsText)}</div>
+                  </div>` : ''}
+              </div>
+            </div>
+
+            <!-- Footer Direct Actions -->
+            <div style="display: flex; gap: 8px; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 14px; margin-top: 6px; flex-wrap: wrap; align-items: center;">
+              <a href="${escapeHtml(person.profileUrl)}" target="_blank" rel="noopener noreferrer"
+                style="flex: 1; min-width: 120px; text-align: center; padding: 8px 12px; background: rgba(30,41,59,0.8); border: 1px solid rgba(255,255,255,0.12); border-radius: var(--radius-sm); font-size: 12px; font-weight: 600; color: #e2e8f0; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 5px; transition: background 0.15s ease;"
+                onmouseenter="this.style.background='rgba(51,65,85,0.9)';"
+                onmouseleave="this.style.background='rgba(30,41,59,0.8)';">
+                🔗 View Profile
+              </a>
+              ${actionBtn}
+              <button type="button"
+                onclick="navigator.clipboard.writeText('${escapeHtml(person.profileUrl)}').then(()=>window.__showToast&&window.__showToast('Profile URL copied!','📋')).catch(()=>{})"
+                style="padding: 8px 12px; background: rgba(30,41,59,0.8); border: 1px solid rgba(255,255,255,0.12); border-radius: var(--radius-sm); font-size: 12px; color: var(--text-muted); cursor: pointer; display: inline-flex; align-items: center; justify-content: center;"
+                title="Copy LinkedIn Profile URL">📋</button>
+            </div>
+
+          </div>`;
+      }
+
+      // ── Company Search Presets & Helpers ────────────────────────────
       window.updateCountryBadge = function(val) {
         const badge = document.getElementById('countryGeoBadge');
         if (!badge) return;
-        const select = document.getElementById('companySearchCountry');
         if (!val) {
           badge.textContent = 'Global';
           badge.style.color = 'var(--text-dim)';
@@ -4238,6 +4817,7 @@
         }
       };
 
+      // ── Execute Company Search ──────────────────────────────────────
       async function runCompanySearch() {
         const kw = companySearchInput ? companySearchInput.value.trim() : '';
         if (!kw) {
@@ -4250,11 +4830,18 @@
         const selectedOpt = countrySelect && countrySelect.selectedIndex >= 0 ? countrySelect.options[countrySelect.selectedIndex] : null;
         const countryName = selectedOpt && countryGeoId ? selectedOpt.textContent.replace(/^[^\w\u00C0-\u024F\u1E00-\u1EFF]+/, '').replace(/\s*\(\d+\)$/, '').trim() : '';
 
-        const limit   = companySearchLimit   ? parseInt(companySearchLimit.value, 10) : 20;
+        const limit    = companySearchLimit    ? parseInt(companySearchLimit.value, 10) : 20;
         const headless = companySearchHeadless ? companySearchHeadless.checked : true;
 
+        if (searchLoadingTitle) searchLoadingTitle.textContent = 'Searching LinkedIn Companies...';
         showPanel('loading');
-        setSearchBusy(true);
+        if (btnCompanySearch) {
+          btnCompanySearch.disabled = true;
+          const icon = document.getElementById('btnCompanySearchIcon');
+          const txt  = document.getElementById('btnCompanySearchText');
+          if (icon) icon.textContent = '⏳';
+          if (txt)  txt.textContent  = ' Searching...';
+        }
         if (btnClearCompanySearch) btnClearCompanySearch.style.display = 'none';
         if (resultBadge) resultBadge.style.display = 'none';
 
@@ -4277,67 +4864,215 @@
           const data = await res.json();
 
           if (!res.ok || !data.success) {
-            errorMsg.textContent = data.error || data.message || 'Unknown error occurred.';
+            if (errorMsg) errorMsg.textContent = data.error || data.message || 'Unknown error occurred.';
             showPanel('error');
             return;
           }
 
           if (!data.results || data.results.length === 0) {
+            if (searchEmptyTitle) searchEmptyTitle.textContent = 'No Companies Found';
+            if (searchEmptyMsg) searchEmptyMsg.textContent = `No company matched "${kw}". Try adjusting your keywords or country filter.`;
             showPanel('empty');
             return;
           }
 
-          // Render top results
-          if (cardsGrid) {
-            cardsGrid.innerHTML = data.results.map((comp, idx) => renderCompanyCard(comp, idx)).join('');
+          if (companyCardsGrid) {
+            companyCardsGrid.innerHTML = data.results.map((comp, idx) => renderCompanyCard(comp, idx)).join('');
           }
-          if (resultsTitle) {
+          if (companyResultsTitle) {
             const countryDesc = data.country ? ` in ${data.country}` : '';
-            resultsTitle.innerHTML = `Top ${data.totalFound} Company Detail${data.totalFound === 1 ? '' : 's'} for <strong>"${escapeHtml(kw)}"</strong>${countryDesc ? `<span style="font-size: 13px; font-weight: 600; color: #38bdf8; margin-left: 8px; background: rgba(14,165,233,0.15); border: 1px solid rgba(14,165,233,0.3); padding: 2px 8px; border-radius: 9999px;">📍 ${escapeHtml(data.country)}</span>` : ''}`;
+            companyResultsTitle.innerHTML = `Top ${data.totalFound} Company Detail${data.totalFound === 1 ? '' : 's'} for <strong>"${escapeHtml(kw)}"</strong>${countryDesc ? `<span style="font-size: 13px; font-weight: 600; color: #38bdf8; margin-left: 8px; background: rgba(14,165,233,0.15); border: 1px solid rgba(14,165,233,0.3); padding: 2px 8px; border-radius: 9999px;">📍 ${escapeHtml(data.country)}</span>` : ''}`;
           }
-          if (timestamp) {
-            timestamp.textContent = new Date(data.timestamp).toLocaleTimeString();
+          if (companyTimestamp) {
+            companyTimestamp.textContent = new Date(data.timestamp || Date.now()).toLocaleTimeString();
           }
           if (resultBadge) {
             resultBadge.textContent = `${data.totalFound} top result${data.totalFound === 1 ? '' : 's'}`;
             resultBadge.style.display = 'inline-block';
           }
           if (btnClearCompanySearch) btnClearCompanySearch.style.display = 'inline-flex';
-          showPanel('results');
+          showPanel('company_results');
 
         } catch (err) {
           if (errorMsg) errorMsg.textContent = `Network error: ${err.message}`;
           showPanel('error');
         } finally {
-          setSearchBusy(false);
+          if (btnCompanySearch) {
+            btnCompanySearch.disabled = false;
+            const icon = document.getElementById('btnCompanySearchIcon');
+            const txt  = document.getElementById('btnCompanySearchText');
+            if (icon) icon.textContent = '🔍';
+            if (txt)  txt.textContent  = ' Search Companies';
+          }
         }
       }
 
+      // ── Execute People Search (Multi-Country & Designation) ─────────
+      window.runPeopleSearch = async function() {
+        const keywords = peopleSearchKeywords ? peopleSearchKeywords.value.trim() : '';
+        const designation = peopleSearchDesignation ? peopleSearchDesignation.value.trim() : '';
+        const currentCompany = peopleSearchCompany ? peopleSearchCompany.value.trim() : '';
+        const network = peopleSearchNetwork ? peopleSearchNetwork.value : '';
+        const limit = peopleSearchLimit ? parseInt(peopleSearchLimit.value, 10) : 20;
+        const headless = peopleSearchHeadless ? peopleSearchHeadless.checked : true;
+        const countries = Array.from(selectedPeopleCountryGeoIds);
+
+        if (!keywords && !designation && !currentCompany && countries.length === 0) {
+          if (peopleSearchKeywords) peopleSearchKeywords.focus();
+          if (window.__showToast) window.__showToast('Please enter a keyword, designation, company, or select at least one country to search.', '⚠️');
+          return;
+        }
+
+        if (searchLoadingTitle) searchLoadingTitle.textContent = 'Searching LinkedIn People across faceted filters...';
+        showPanel('loading');
+        if (btnPeopleSearch) {
+          btnPeopleSearch.disabled = true;
+          const icon = document.getElementById('btnPeopleSearchIcon');
+          const txt  = document.getElementById('btnPeopleSearchText');
+          if (icon) icon.textContent = '⏳';
+          if (txt)  txt.textContent  = ' Searching...';
+        }
+        if (btnClearCompanySearch) btnClearCompanySearch.style.display = 'none';
+        if (resultBadge) resultBadge.style.display = 'none';
+
+        try {
+          const activeUserId = typeof activeUserSession !== 'undefined' ? activeUserSession?.id : undefined;
+          const activeUsername = typeof activeUserSession !== 'undefined' ? activeUserSession?.username : undefined;
+
+          const res = await fetch('/api/people/search', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              keywords: keywords || undefined,
+              designation: designation || undefined,
+              title: designation || undefined,
+              countries: countries.length > 0 ? countries : undefined,
+              currentCompany: currentCompany || undefined,
+              network: network || undefined,
+              limit,
+              headless,
+              userId: activeUserId,
+              username: activeUsername
+            })
+          });
+          const data = await res.json();
+
+          if (!res.ok || !data.success) {
+            if (errorMsg) errorMsg.textContent = data.error || data.message || 'Failed to complete LinkedIn people search.';
+            showPanel('error');
+            return;
+          }
+
+          if (!data.results || data.results.length === 0) {
+            if (searchEmptyTitle) searchEmptyTitle.textContent = 'No People Found';
+            if (searchEmptyMsg) searchEmptyMsg.textContent = `No professionals found matching your query (${designation || keywords || 'selected criteria'}). Try removing some country filters or broadening the designation.`;
+            showPanel('empty');
+            return;
+          }
+
+          if (peopleCardsGrid) {
+            peopleCardsGrid.innerHTML = data.results.map((person, idx) => renderPersonCard(person, idx)).join('');
+          }
+
+          if (peopleResultsTitle) {
+            const parts = [];
+            if (data.query?.companies && data.query.companies.length > 0) {
+              parts.push(`Company: <strong>"${escapeHtml(data.query.companies.join(', '))}"</strong>`);
+            }
+            if (data.query?.designation) parts.push(`Designation: <strong>"${escapeHtml(data.query.designation)}"</strong>`);
+            if (data.query?.keywords) parts.push(`Keywords: <strong>"${escapeHtml(data.query.keywords)}"</strong>`);
+            if (data.query?.countries && data.query.countries.length > 0) {
+              parts.push(`Strict Location: <strong>${data.query.countries.map(c => `${c.flag || '📍'} ${escapeHtml(c.name)}`).join(', ')}</strong>`);
+            }
+            const queryDesc = parts.length > 0 ? ` for ${parts.join(' &bull; ')}` : '';
+            peopleResultsTitle.innerHTML = `Found ${data.totalFound} Person Detail${data.totalFound === 1 ? '' : 's'}${queryDesc}`;
+          }
+
+          if (peopleResultsSubtitle) {
+            const countryBadges = (data.query?.countries && data.query.countries.length > 0)
+              ? data.query.countries.map(c => `<span style="display: inline-flex; align-items: center; gap: 3px; background: rgba(56,189,248,0.15); border: 1px solid rgba(56,189,248,0.3); padding: 1px 7px; border-radius: 9999px; font-size: 11px; color: #bae6fd;">${c.flag || '📍'} ${escapeHtml(c.name)} (Strict Filter)</span>`).join(' ')
+              : '<span style="color: var(--text-dim);">Global (All Countries)</span>';
+            peopleResultsSubtitle.innerHTML = `Verified Location: ${countryBadges}`;
+          }
+
+          if (peopleTimestamp) {
+            peopleTimestamp.textContent = new Date(data.timestamp || Date.now()).toLocaleTimeString();
+          }
+
+          if (resultBadge) {
+            resultBadge.textContent = `${data.totalFound} people found`;
+            resultBadge.style.display = 'inline-block';
+          }
+
+          if (btnClearCompanySearch) btnClearCompanySearch.style.display = 'inline-flex';
+          showPanel('people_results');
+
+        } catch (err) {
+          if (errorMsg) errorMsg.textContent = `Network error: ${err.message}`;
+          showPanel('error');
+        } finally {
+          if (btnPeopleSearch) {
+            btnPeopleSearch.disabled = false;
+            const icon = document.getElementById('btnPeopleSearchIcon');
+            const txt  = document.getElementById('btnPeopleSearchText');
+            if (icon) icon.textContent = '👥';
+            if (txt)  txt.textContent  = ' Search People';
+          }
+        }
+      };
+
+      // ── Event Listeners ─────────────────────────────────────────────
       if (formCompanySearch) {
         formCompanySearch.addEventListener('submit', (e) => { e.preventDefault(); runCompanySearch(); });
       }
+      if (formPeopleSearch) {
+        formPeopleSearch.addEventListener('submit', (e) => { e.preventDefault(); window.runPeopleSearch(); });
+      }
 
       if (btnRetryCompanySearch) {
-        btnRetryCompanySearch.addEventListener('click', () => runCompanySearch());
+        btnRetryCompanySearch.addEventListener('click', () => {
+          if (currentSearchTab === 'companies') runCompanySearch();
+          else window.runPeopleSearch();
+        });
       }
 
       if (btnClearCompanySearch) {
         btnClearCompanySearch.addEventListener('click', () => {
-          if (cardsGrid) cardsGrid.innerHTML = '';
+          if (companyCardsGrid) companyCardsGrid.innerHTML = '';
+          if (peopleCardsGrid) peopleCardsGrid.innerHTML = '';
           if (resultBadge) resultBadge.style.display = 'none';
           btnClearCompanySearch.style.display = 'none';
           showPanel('idle');
         });
       }
 
-      // Allow pressing Enter in the search box
       if (companySearchInput) {
         companySearchInput.addEventListener('keydown', (e) => {
           if (e.key === 'Enter') { e.preventDefault(); runCompanySearch(); }
         });
       }
 
-      // Expose showToast globally for card clipboard button
+      if (peopleSearchKeywords) {
+        peopleSearchKeywords.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') { e.preventDefault(); window.runPeopleSearch(); }
+        });
+      }
+      if (peopleSearchDesignation) {
+        peopleSearchDesignation.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') { e.preventDefault(); window.runPeopleSearch(); }
+        });
+      }
+      if (peopleSearchCompany) {
+        peopleSearchCompany.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') { e.preventDefault(); window.runPeopleSearch(); }
+        });
+      }
+
+      // Initialize Checkboxes list & pills display
+      initPeopleCountryCheckboxes();
+      updateCountryPillsDisplay();
+
+      // Expose showToast globally
       window.__showToast = window.showToast || function(msg, icon) {
         console.log(`${icon || ''} ${msg}`);
       };
@@ -4385,7 +5120,7 @@
       }
 
       const avatarHtml = person.photoUrl
-        ? `<img src="${escapePersonHtml(person.photoUrl)}" alt="${escapePersonHtml(person.name)}" style="width: 42px; height: 42px; border-radius: 50%; object-fit: cover; border: 1px solid rgba(255,255,255,0.15); flex-shrink: 0;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+        ? `<img src="${escapePersonHtml(person.photoUrl)}" referrerpolicy="no-referrer" alt="${escapePersonHtml(person.name)}" style="width: 42px; height: 42px; border-radius: 50%; object-fit: cover; border: 1px solid rgba(255,255,255,0.15); flex-shrink: 0;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
            <div style="display: none; width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(135deg, rgba(14,165,233,0.3), rgba(99,102,241,0.3)); align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; border: 1px solid rgba(14,165,233,0.3);">👤</div>`
         : `<div style="width: 42px; height: 42px; border-radius: 50%; background: linear-gradient(135deg, rgba(14,165,233,0.3), rgba(99,102,241,0.3)); display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; border: 1px solid rgba(14,165,233,0.3);">👤</div>`;
 

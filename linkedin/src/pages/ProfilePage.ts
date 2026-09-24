@@ -1,5 +1,4 @@
-import type { Page } from '@playwright/test';
-import { expect } from '@playwright/test';
+import type { Page } from 'playwright';
 import { logger } from '../utils/logger.js';
 import { CONNECT_BUTTON_SELECTOR, PENDING_BADGE_SELECTOR } from '../config/constants.js';
 import type { ConnectionStatus } from '../types/profile.types.js';
@@ -33,7 +32,7 @@ export class ProfilePage {
       throw new ProfileNotFoundError(profileId);
     }
 
-    await expect(this.profileName).toBeVisible({ timeout: 10_000 });
+    await this.profileName.waitFor({ state: 'visible', timeout: 10_000 });
   }
 
   /** Returns the profile display name. */
