@@ -12,12 +12,57 @@ CREATE DATABASE IF NOT EXISTS `linkedin_db`
 USE `linkedin_db`;
 
 -- -----------------------------------------------------------------------------
+-- Table: app_users
+-- Stores application platform users (Admin, Manager, User) for RBAC authentication.
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `app_users` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `email` VARCHAR(255) NOT NULL UNIQUE,
+  `password_hash` VARCHAR(255) NOT NULL,
+  `salt` VARCHAR(255) NOT NULL,
+  `role` ENUM('admin', 'manager', 'user') NOT NULL DEFAULT 'user',
+  `manager_id` INT NULL COMMENT 'References parent manager in app_users.id',
+  `created_by` INT NULL COMMENT 'References creating admin or manager in app_users.id',
+  `status` ENUM('active', 'inactive', 'suspended') NOT NULL DEFAULT 'active',
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX `idx_email` (`email`),
+  INDEX `idx_role` (`role`),
+  INDEX `idx_manager_id` (`manager_id`),
+  INDEX `idx_created_by` (`created_by`),
+  CONSTRAINT `fk_app_users_manager`
+    FOREIGN KEY (`manager_id`)
+    REFERENCES `app_users` (`id`)
+    ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -----------------------------------------------------------------------------
+-- Table: app_user_sessions
+-- Active bearer authentication sessions for platform users.
+-- -----------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `app_user_sessions` (
+  `id` BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+  `token` VARCHAR(128) NOT NULL UNIQUE,
+  `app_user_id` INT NOT NULL,
+  `expires_at` DATETIME NOT NULL,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  INDEX `idx_token` (`token`),
+  INDEX `idx_app_user_id` (`app_user_id`),
+  CONSTRAINT `fk_app_user_sessions_user`
+    FOREIGN KEY (`app_user_id`)
+    REFERENCES `app_users` (`id`)
+    ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- -----------------------------------------------------------------------------
 -- Table: linkedin_test_users
 -- Stores registered LinkedIn test accounts, login credentials, automation flags,
 -- and serialized session state (Playwright storageState JSON & cookies).
+-- Scoped to platform users via `app_user_id`.
 -- -----------------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS `linkedin_test_users` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `app_user_id` INT NULL COMMENT 'References app_users.id for multi-tenant isolation',
   `username` VARCHAR(255) NOT NULL UNIQUE,
   `password` VARCHAR(255) NOT NULL,
   `login_try` TINYINT(1) NOT NULL DEFAULT 1 COMMENT '1 = target user for login cron; 0 = skip in cron',

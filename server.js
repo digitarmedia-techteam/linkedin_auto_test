@@ -12,6 +12,9 @@ import { SentInvitationsService } from './linkedin/src/services/SentInvitationsS
 import { MessagingService, extractThreadId } from './linkedin/src/services/MessagingService.ts';
 import { AcceptedConnectionsService } from './linkedin/src/services/AcceptedConnectionsService.ts';
 import { ConnectionTrackingRepository } from './linkedin/src/db/repositories/ConnectionTrackingRepository.ts';
+import { AppUserRepository } from './linkedin/src/db/repositories/AppUserRepository.ts';
+import { CompanySearchService, LINKEDIN_COUNTRY_GEO_MAP } from './linkedin/src/services/CompanySearchService.ts';
+import { CompanyPeopleSearchService } from './linkedin/src/services/CompanyPeopleSearchService.ts';
 import { EventEmitter } from 'events';
 
 dotenv.config();
@@ -33,6 +36,311 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(path.join(__dirname, 'public')));
+
+// Initialize database tables on server startup
+AppUserRepository.initTables().catch((err) => {
+  console.error('[Server] Failed to initialize AppUserRepository tables:', err);
+});
+
+// ── RBAC Authentication Middleware ──────────────────────────────────────────
+async function authenticateToken(req, res, next) {
+  let token = null;
+  const authHeader = req.headers['authorization'];
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    token = authHeader.substring(7).trim();
+  } else if (req.headers['x-access-token']) {
+    token = String(req.headers['x-access-token']).trim();
+  } else if (req.query && req.query.token) {
+    token = String(req.query.token).trim();
+  }
+
+  if (!token) {
+    return res.status(401).json({
+      success: false,
+      error: 'Authentication required. Please provide a valid session token.',
+      code: 'UNAUTHENTICATED',
+    });
+  }
+
+  try {
+    const appUser = await AppUserRepository.getSessionUser(token);
+    if (!appUser) {
+      return res.status(401).json({
+        success: false,
+        error: 'Invalid or expired session. Please log in again.',
+        code: 'SESSION_EXPIRED',
+      });
+    }
+
+    req.appUser = appUser;
+    req.token = token;
+    next();
+  } catch (error) {
+    console.error('[Auth Middleware] Session validation failed:', error);
+    res.status(500).json({ success: false, error: 'Internal authentication error' });
+  }
+}
+
+function requirePermission(requiredPermission) {
+  return (req, res, next) => {
+    if (!req.appUser) {
+      return res.status(401).json({ success: false, error: 'Unauthenticated', code: 'UNAUTHENTICATED' });
+    }
+
+    const permissions = req.appUser.permissions || [];
+    const hasPerm = permissions.includes('*') || permissions.includes(requiredPermission);
+
+    if (!hasPerm) {
+      return res.status(403).json({
+        success: false,
+        error: `Forbidden: You do not have permission (${requiredPermission}) to perform this action.`,
+        code: 'FORBIDDEN',
+        requiredPermission,
+        userRole: req.appUser.role,
+      });
+    }
+
+    next();
+  };
+}
+
+function requireRole(...allowedRoles) {
+  return (req, res, next) => {
+    if (!req.appUser) {
+      return res.status(401).json({ success: false, error: 'Unauthenticated', code: 'UNAUTHENTICATED' });
+    }
+
+    if (!allowedRoles.includes(req.appUser.role)) {
+      return res.status(403).json({
+        success: false,
+        error: `Forbidden: This action requires role (${allowedRoles.join(', ')}). Your role is ${req.appUser.role}.`,
+        code: 'FORBIDDEN',
+        userRole: req.appUser.role,
+      });
+    }
+
+    next();
+  };
+}
+
+// ── Platform Authentication Endpoints ────────────────────────────────────────
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ success: false, error: 'Email and password are required' });
+    }
+
+    const user = await AppUserRepository.validateCredentials(email, password);
+    if (!user) {
+      return res.status(401).json({ success: false, error: 'Invalid email or password' });
+    }
+
+    const token = await AppUserRepository.createSession(user.id);
+    const permissions = AppUserRepository.getPermissionsForRole(user.role);
+
+    console.log(`[Auth] Platform user logged in: ${user.email} (Role: ${user.role})`);
+
+    res.json({
+      success: true,
+      token,
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        permissions,
+      },
+    });
+  } catch (error) {
+    console.error('[Auth] Login error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.post('/api/auth/logout', async (req, res) => {
+  try {
+    let token = null;
+    const authHeader = req.headers['authorization'];
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      token = authHeader.substring(7).trim();
+    } else if (req.body?.token) {
+      token = req.body.token;
+    }
+
+    if (token) {
+      await AppUserRepository.deleteSession(token);
+    }
+    res.json({ success: true, message: 'Logged out successfully' });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.get('/api/auth/me', authenticateToken, async (req, res) => {
+  res.json({
+    success: true,
+    user: {
+      id: req.appUser.id,
+      email: req.appUser.email,
+      role: req.appUser.role,
+      permissions: req.appUser.permissions,
+    },
+  });
+});
+
+// ── Platform Admin User Management (Admin Only) ──────────────────────────────
+app.get('/api/admin/hierarchy', authenticateToken, requireRole('admin'), async (req, res) => {
+  try {
+    const hierarchy = await AppUserRepository.getHierarchyTree();
+    res.json({ success: true, ...hierarchy });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.get('/api/admin/users', authenticateToken, requireRole('admin'), async (req, res) => {
+  try {
+    const users = await AppUserRepository.getAllUsers();
+    res.json({ success: true, users });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.post('/api/admin/users', authenticateToken, requireRole('admin'), async (req, res) => {
+  try {
+    const { email, password, role = 'user', manager_id } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ success: false, error: 'Email and password are required' });
+    }
+    if (!['admin', 'manager', 'user'].includes(role)) {
+      return res.status(400).json({ success: false, error: 'Invalid role. Must be admin, manager, or user' });
+    }
+
+    const existing = await AppUserRepository.getUserByEmail(email);
+    if (existing) {
+      return res.status(409).json({ success: false, error: `User with email ${email} already exists` });
+    }
+
+    let parsedManagerId = null;
+    if (role === 'user' && manager_id) {
+      parsedManagerId = parseInt(manager_id, 10);
+      const managerUser = await AppUserRepository.getUserById(parsedManagerId);
+      if (!managerUser || managerUser.role !== 'manager') {
+        return res.status(400).json({ success: false, error: 'Specified manager_id is not a valid Manager' });
+      }
+    }
+
+    const user = await AppUserRepository.createUser(email, password, role, parsedManagerId, req.appUser.id);
+    console.log(`[Admin] Created platform user: ${email} (Role: ${role}, Manager ID: ${parsedManagerId})`);
+    res.json({ success: true, user });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.delete('/api/admin/users/:id', authenticateToken, requireRole('admin'), async (req, res) => {
+  try {
+    const targetId = parseInt(req.params.id, 10);
+    if (isNaN(targetId)) {
+      return res.status(400).json({ success: false, error: 'Invalid user ID' });
+    }
+
+    if (targetId === req.appUser.id) {
+      return res.status(400).json({ success: false, error: 'Cannot delete your own admin account' });
+    }
+
+    const targetUser = await AppUserRepository.getUserById(targetId);
+    if (!targetUser) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+
+    if (targetUser.role === 'admin') {
+      return res.status(403).json({ success: false, error: 'Cannot delete an Administrator account' });
+    }
+
+    await AppUserRepository.deleteUser(targetId);
+    console.log(`[Admin] Deleted platform user ID: ${targetId} (${targetUser.email})`);
+    res.json({ success: true, message: `User ID ${targetId} deleted successfully` });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.patch('/api/admin/users/:id/role', authenticateToken, requireRole('admin'), async (req, res) => {
+  try {
+    const targetId = parseInt(req.params.id, 10);
+    const { role } = req.body;
+    if (!['admin', 'manager', 'user'].includes(role)) {
+      return res.status(400).json({ success: false, error: 'Invalid role. Must be admin, manager, or user' });
+    }
+    await AppUserRepository.updateUserRole(targetId, role);
+    res.json({ success: true, message: `User ID ${targetId} role updated to ${role}` });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+// ── Manager Team Management (Manager Only) ──────────────────────────────────
+app.get('/api/manager/my-users', authenticateToken, requireRole('manager'), async (req, res) => {
+  try {
+    const users = await AppUserRepository.getUsersByManagerId(req.appUser.id);
+    res.json({ success: true, users });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.post('/api/manager/my-users', authenticateToken, requireRole('manager'), async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ success: false, error: 'Email and password are required' });
+    }
+
+    const existing = await AppUserRepository.getUserByEmail(email);
+    if (existing) {
+      return res.status(409).json({ success: false, error: `User with email ${email} already exists` });
+    }
+
+    // Force role to 'user' and manager_id to current manager's ID
+    const user = await AppUserRepository.createUser(email, password, 'user', req.appUser.id, req.appUser.id);
+    console.log(`[Manager] Manager ${req.appUser.email} created team user: ${email}`);
+    res.json({ success: true, user });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+app.delete('/api/manager/my-users/:id', authenticateToken, requireRole('manager'), async (req, res) => {
+  try {
+    const targetId = parseInt(req.params.id, 10);
+    if (isNaN(targetId)) {
+      return res.status(400).json({ success: false, error: 'Invalid user ID' });
+    }
+
+    // Strict Anti-IDOR: Check that target user exists, is role 'user', and belongs to this manager
+    const targetUser = await AppUserRepository.getUserById(targetId);
+    if (!targetUser) {
+      return res.status(404).json({ success: false, error: 'User not found' });
+    }
+
+    if (targetUser.role !== 'user' || targetUser.manager_id !== req.appUser.id) {
+      console.warn(`[Security] Manager ${req.appUser.id} attempted to delete unauthorized user ${targetId}`);
+      return res.status(403).json({ success: false, error: 'Forbidden: You can only delete users assigned to your team.' });
+    }
+
+    const deleted = await AppUserRepository.deleteUserForManager(targetId, req.appUser.id);
+    if (!deleted) {
+      return res.status(404).json({ success: false, error: 'User not found in your team' });
+    }
+
+    console.log(`[Manager] Manager ${req.appUser.email} deleted team user ID: ${targetId}`);
+    res.json({ success: true, message: `Team user ${targetUser.email} deleted successfully` });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
 
 // ── Interactive UI Route ─────────────────────────────────────────────────────
 app.get(['/addnewuser', '/addneCron', '/addnecron', '/add-cron'], (req, res) => {
@@ -97,9 +405,15 @@ app.get('/api/cron/login', handleCronLogin);
 app.post('/api/cron/login', handleCronLogin);
 
 // ── Query Details for a User from loggedin_details Table ─────────────────────
-app.get('/api/users/:userId/details', async (req, res) => {
+app.get('/api/users/:userId/details', authenticateToken, requirePermission('linkedin:manage'), async (req, res) => {
   try {
     const userId = parseInt(req.params.userId, 10);
+    if (req.appUser.role !== 'admin') {
+      const user = await TestUserRepository.getUserById(userId);
+      if (!user || user.app_user_id !== req.appUser.id) {
+        return res.status(403).json({ success: false, error: 'Forbidden: You do not own this LinkedIn account.' });
+      }
+    }
     const details = await LoggedInDetailsRepository.getDetailsByUserId(userId);
     const secrets = await LoggedInDetailsRepository.getSecretTokens(userId);
 
@@ -115,10 +429,15 @@ app.get('/api/users/:userId/details', async (req, res) => {
   }
 });
 
-// ── List All Test Users ─────────────────────────────────────────────────────
-app.get('/api/users', async (req, res) => {
+// ── List Test Users Scoped to Platform User ─────────────────────────────────
+app.get('/api/users', authenticateToken, async (req, res) => {
   try {
-    const users = await TestUserRepository.getAllUsers();
+    let users;
+    if (req.appUser.role === 'admin' && req.query.all === 'true') {
+      users = await TestUserRepository.getAllUsers();
+    } else {
+      users = await TestUserRepository.getUsersByAppUserId(req.appUser.id);
+    }
     res.json({
       success: true,
       count: users.length,
@@ -141,6 +460,7 @@ app.get('/api/users', async (req, res) => {
         }
         return {
           id: u.id,
+          app_user_id: u.app_user_id,
           username: u.username,
           login_try: u.login_try,
           status: u.status,
@@ -160,7 +480,7 @@ app.get('/api/users', async (req, res) => {
 });
 
 // ── Add or Update a Test User ───────────────────────────────────────────────
-app.post('/api/users', async (req, res) => {
+app.post('/api/users', authenticateToken, requirePermission('linkedin:manage'), async (req, res) => {
   const { username, password, login_try = 1, status = 'active', meta_data } = req.body;
   if (!username || !password) {
     return res.status(400).json({ success: false, error: 'username and password are required' });
@@ -168,6 +488,7 @@ app.post('/api/users', async (req, res) => {
 
   try {
     await TestUserRepository.upsertUser({
+      app_user_id: req.appUser.id,
       username,
       password,
       login_try: Number(login_try),
@@ -212,6 +533,10 @@ const handleUpdateLoginTry = async (req, res) => {
       return res.status(404).json({ success: false, error: `User with ID ${userId} not found` });
     }
 
+    if (req.appUser.role !== 'admin' && user.app_user_id !== req.appUser.id) {
+      return res.status(403).json({ success: false, error: 'Forbidden: You do not own this LinkedIn account.' });
+    }
+
     await TestUserRepository.updateLoginTry(userId, numericLoginTry);
     const updated = await TestUserRepository.getUserById(userId);
 
@@ -233,13 +558,13 @@ const handleUpdateLoginTry = async (req, res) => {
   }
 };
 
-app.patch('/api/users/:userId/login-try', handleUpdateLoginTry);
-app.put('/api/users/:userId/login-try', handleUpdateLoginTry);
-app.post('/api/users/:userId/login-try', handleUpdateLoginTry);
-app.patch('/api/users/:userId', handleUpdateLoginTry);
+app.patch('/api/users/:userId/login-try', authenticateToken, requirePermission('linkedin:manage'), handleUpdateLoginTry);
+app.put('/api/users/:userId/login-try', authenticateToken, requirePermission('linkedin:manage'), handleUpdateLoginTry);
+app.post('/api/users/:userId/login-try', authenticateToken, requirePermission('linkedin:manage'), handleUpdateLoginTry);
+app.patch('/api/users/:userId', authenticateToken, requirePermission('linkedin:manage'), handleUpdateLoginTry);
 
 // ── Check Active Session & Auto-Login Status ────────────────────────────────
-app.get('/api/session/check', async (req, res) => {
+app.get('/api/session/check', authenticateToken, async (req, res) => {
   try {
     const userId = req.query.userId ? parseInt(req.query.userId, 10) : undefined;
     const username = req.query.username;
@@ -248,10 +573,20 @@ app.get('/api/session/check', async (req, res) => {
     let user = null;
     if (userId) {
       user = await TestUserRepository.getUserById(userId);
+      if (user && req.appUser.role !== 'admin' && user.app_user_id !== req.appUser.id) {
+        return res.status(403).json({ hasSession: false, isValid: false, error: 'Forbidden: You do not own this account.' });
+      }
     } else if (username) {
       user = await TestUserRepository.getUserByUsername(username);
+      if (user && req.appUser.role !== 'admin' && user.app_user_id !== req.appUser.id) {
+        return res.status(403).json({ hasSession: false, isValid: false, error: 'Forbidden: You do not own this account.' });
+      }
     } else {
-      user = await TestUserRepository.getActiveSessionUser();
+      if (req.appUser.role !== 'admin') {
+        user = await TestUserRepository.getActiveSessionUserForAppUser(req.appUser.id);
+      } else {
+        user = await TestUserRepository.getActiveSessionUser();
+      }
     }
 
     if (!user || !user.storage_state_json) {
@@ -288,16 +623,26 @@ app.get('/api/session/check', async (req, res) => {
 });
 
 // ── Explicit Logout (Clear Stored Session) ───────────────────────────────────
-app.post('/api/session/logout', async (req, res) => {
+app.post('/api/session/logout', authenticateToken, requirePermission('linkedin:manage'), async (req, res) => {
   try {
     const { userId, username } = req.body;
     let targetUser = null;
     if (userId) {
       targetUser = await TestUserRepository.getUserById(parseInt(userId, 10));
+      if (targetUser && req.appUser.role !== 'admin' && targetUser.app_user_id !== req.appUser.id) {
+        return res.status(403).json({ success: false, error: 'Forbidden: You do not own this account.' });
+      }
     } else if (username) {
       targetUser = await TestUserRepository.getUserByUsername(username);
+      if (targetUser && req.appUser.role !== 'admin' && targetUser.app_user_id !== req.appUser.id) {
+        return res.status(403).json({ success: false, error: 'Forbidden: You do not own this account.' });
+      }
     } else {
-      targetUser = await TestUserRepository.getActiveSessionUser();
+      if (req.appUser.role !== 'admin') {
+        targetUser = await TestUserRepository.getActiveSessionUserForAppUser(req.appUser.id);
+      } else {
+        targetUser = await TestUserRepository.getActiveSessionUser();
+      }
     }
 
     if (!targetUser) {
@@ -318,16 +663,26 @@ app.post('/api/session/logout', async (req, res) => {
 });
 
 // ── Restore Stored Session to Feed ──────────────────────────────────────────
-app.post('/api/session/restore', async (req, res) => {
+app.post('/api/session/restore', authenticateToken, requirePermission('linkedin:manage'), async (req, res) => {
   try {
     const { userId, username } = req.body;
     let targetUser = null;
     if (userId) {
       targetUser = await TestUserRepository.getUserById(parseInt(userId, 10));
+      if (targetUser && req.appUser.role !== 'admin' && targetUser.app_user_id !== req.appUser.id) {
+        return res.status(403).json({ success: false, error: 'Forbidden: You do not own this account.' });
+      }
     } else if (username) {
       targetUser = await TestUserRepository.getUserByUsername(username);
+      if (targetUser && req.appUser.role !== 'admin' && targetUser.app_user_id !== req.appUser.id) {
+        return res.status(403).json({ success: false, error: 'Forbidden: You do not own this account.' });
+      }
     } else {
-      targetUser = await TestUserRepository.getActiveSessionUser();
+      if (req.appUser.role !== 'admin') {
+        targetUser = await TestUserRepository.getActiveSessionUserForAppUser(req.appUser.id);
+      } else {
+        targetUser = await TestUserRepository.getActiveSessionUser();
+      }
     }
 
     if (!targetUser || !targetUser.storage_state_json) {
@@ -397,8 +752,9 @@ const handleDirectLogin = async (req, res) => {
     let targetUser;
 
     if (username && password) {
-      // Upsert user into database first
+      // Upsert user into database first with platform app_user_id
       await TestUserRepository.upsertUser({
+        app_user_id: req.appUser ? req.appUser.id : null,
         username,
         password,
         login_try: Number(login_try),
@@ -416,6 +772,14 @@ const handleDirectLogin = async (req, res) => {
       return res.status(400).json({
         success: false,
         error: 'Username and password are required for login (or a valid existing userId/username)',
+      });
+    }
+
+    // Tenant isolation verification: if account belongs to another user, deny access
+    if (req.appUser && req.appUser.role !== 'admin' && targetUser.app_user_id && targetUser.app_user_id !== req.appUser.id) {
+      return res.status(403).json({
+        success: false,
+        error: "Forbidden: You cannot access or authenticate another user's LinkedIn account.",
       });
     }
 
@@ -511,8 +875,8 @@ const handleDirectLogin = async (req, res) => {
   }
 };
 
-app.post('/api/login', handleDirectLogin);
-app.post('/api/users/login', handleDirectLogin);
+app.post('/api/login', authenticateToken, requirePermission('linkedin:manage'), handleDirectLogin);
+app.post('/api/users/login', authenticateToken, requirePermission('linkedin:manage'), handleDirectLogin);
 
 // ── SSE Stream for Real-Time Authentication Status ───────────────────────────
 app.get('/api/login/stream', (req, res) => {
@@ -540,7 +904,7 @@ app.get('/api/login/stream', (req, res) => {
 });
 
 // ── Check Active 2FA/SMS Challenge ──────────────────────────────────────────
-app.get('/api/login/challenge', (req, res) => {
+app.get('/api/login/challenge', authenticateToken, (req, res) => {
   const username = req.query.username;
   const userId = req.query.userId ? parseInt(req.query.userId, 10) : undefined;
   const challenge = OtpChallengeService.getChallenge(username || userId || '');
@@ -558,7 +922,7 @@ app.get('/api/login/challenge', (req, res) => {
 });
 
 // ── Submit OTP from UI ──────────────────────────────────────────────────────
-app.post('/api/login/submit-otp', (req, res) => {
+app.post('/api/login/submit-otp', authenticateToken, (req, res) => {
   const { username, userId, otp } = req.body;
   if (!otp || String(otp).trim().length < 3) {
     return res.status(400).json({ success: false, error: 'Valid OTP code is required' });
@@ -651,16 +1015,14 @@ const handleCheckConnectionStatus = async (req, res) => {
   }
 };
 
-app.post('/api/connect/check-status', handleCheckConnectionStatus);
-app.get('/api/connect/check-status', handleCheckConnectionStatus);
-app.post('/api/connect/status', handleCheckConnectionStatus);
-app.get('/api/connect/status', handleCheckConnectionStatus);
+app.post('/api/connect/check-status', authenticateToken, requirePermission('connections:read'), handleCheckConnectionStatus);
+app.get('/api/connect/check-status', authenticateToken, requirePermission('connections:read'), handleCheckConnectionStatus);
+app.post('/api/connect/status', authenticateToken, requirePermission('connections:read'), handleCheckConnectionStatus);
+app.get('/api/connect/status', authenticateToken, requirePermission('connections:read'), handleCheckConnectionStatus);
 
 // ── Send Direct LinkedIn Connection Invite ──────────────────────────────────
-app.post('/api/connect/invite', async (req, res) => {
+app.post('/api/connect/invite', authenticateToken, requirePermission('connections:write'), async (req, res) => {
   const targetUrl = (req.body.targetUrl || req.body.targetUrlOrVanity || '').trim();
-  const username = (req.body.username || req.body.senderUsername || '').trim();
-  const userId = req.body.userId;
   const note = req.body.note;
   const headless = req.body.headless !== undefined ? Boolean(req.body.headless) : true;
 
@@ -680,22 +1042,15 @@ app.post('/api/connect/invite', async (req, res) => {
   }
 
   try {
-    let sender = null;
-    if (userId) {
-      sender = await TestUserRepository.getUserById(parseInt(userId, 10));
-    } else if (username) {
-      sender = await TestUserRepository.getUserByUsername(username);
-    } else {
-      sender = await TestUserRepository.getActiveSessionUser();
-    }
+    const { sender, username } = await resolveSenderUser(req);
 
     if (!sender) {
       return res.status(404).json({
         success: false,
         reason: 'SENDER_NOT_FOUND',
         error: username
-          ? `Sender account "${username}" was not found in the database. Please check registered accounts.`
-          : 'No sender account selected or found with an active session. Please log in first.',
+          ? `Sender account "${username}" was not found or not accessible. Please check registered accounts.`
+          : 'No sender account found with an active session. Please log in first.',
       });
     }
 
@@ -781,25 +1136,19 @@ app.post('/api/connect/invite', async (req, res) => {
 
 
 // ── Check Today's Sent Invitations ──────────────────────────────────────────
-app.post('/api/connect/sent-today', async (req, res) => {
-  const username = (req.body.username || req.body.senderUsername || '').trim();
+app.post('/api/connect/sent-today', authenticateToken, requirePermission('connections:read'), async (req, res) => {
   const headless = req.body.headless !== undefined ? Boolean(req.body.headless) : true;
 
   try {
-    let sender = null;
-    if (username) {
-      sender = await TestUserRepository.getUserByUsername(username);
-    } else {
-      sender = await TestUserRepository.getActiveSessionUser();
-    }
+    const { sender, username } = await resolveSenderUser(req);
 
     if (!sender) {
       return res.status(404).json({
         success: false,
         reason: 'SENDER_NOT_FOUND',
         error: username
-          ? `Sender account "${username}" was not found in the database. Please check registered accounts.`
-          : 'No sender account selected or found with an active session. Please log in first.',
+          ? `Sender account "${username}" was not found or not accessible. Please check registered accounts.`
+          : 'No sender account found with an active session. Please log in first.',
       });
     }
 
@@ -828,8 +1177,6 @@ app.post('/api/connect/sent-today', async (req, res) => {
 // ── Read LinkedIn Messaging Thread & Last Message ──────────────────────────
 const handleReadThread = async (req, res) => {
   const threadUrl = (req.body.threadUrl || req.body.threadUrlOrId || req.body.url || '').trim();
-  const username = (req.body.username || req.body.senderUsername || '').trim();
-  const userId = req.body.userId;
   const headless = req.body.headless !== undefined ? Boolean(req.body.headless) : true;
 
   if (!threadUrl || !extractThreadId(threadUrl)) {
@@ -844,20 +1191,13 @@ const handleReadThread = async (req, res) => {
   }
 
   try {
-    let sender = null;
-    if (userId) {
-      sender = await TestUserRepository.getUserById(parseInt(userId, 10));
-    } else if (username) {
-      sender = await TestUserRepository.getUserByUsername(username);
-    } else {
-      sender = await TestUserRepository.getActiveSessionUser();
-    }
+    const { sender, username: resolvedUsername } = await resolveSenderUser(req);
 
     if (!sender) {
       return res.status(404).json({
         success: false,
-        error: username
-          ? `Sender account "${username}" was not found in the database.`
+        error: resolvedUsername
+          ? `Sender account "${resolvedUsername}" was not found or not accessible.`
           : 'No sender account found with an active session. Please log in first.',
       });
     }
@@ -887,8 +1227,8 @@ const handleReadThread = async (req, res) => {
   }
 };
 
-app.post('/api/messages/thread/read', handleReadThread);
-app.post('/api/messages/read', handleReadThread);
+app.post('/api/messages/thread/read', authenticateToken, requirePermission('messages:read'), handleReadThread);
+app.post('/api/messages/read', authenticateToken, requirePermission('messages:read'), handleReadThread);
 
 // ── Send Message / Reply to LinkedIn Recipient or Thread ───────────────────
 const handleSendReply = async (req, res) => {
@@ -897,8 +1237,6 @@ const handleSendReply = async (req, res) => {
   let recipientProfileUrl = (req.body.recipientProfileUrl || req.body.profileUrl || '').trim();
   let recipientName = (req.body.recipientName || req.body.name || '').trim();
   const message = (req.body.message || req.body.replyText || req.body.text || '').trim();
-  const username = (req.body.username || req.body.senderUsername || '').trim();
-  const userId = req.body.userId;
   const headless = req.body.headless !== undefined ? Boolean(req.body.headless) : true;
 
   if (!message) {
@@ -914,20 +1252,13 @@ const handleSendReply = async (req, res) => {
   }
 
   try {
-    let sender = null;
-    if (userId) {
-      sender = await TestUserRepository.getUserById(parseInt(userId, 10));
-    } else if (username) {
-      sender = await TestUserRepository.getUserByUsername(username);
-    } else {
-      sender = await TestUserRepository.getActiveSessionUser();
-    }
+    const { sender, username: resolvedUsername } = await resolveSenderUser(req);
 
     if (!sender) {
       return res.status(404).json({
         success: false,
-        error: username
-          ? `Sender account "${username}" was not found in the database.`
+        error: resolvedUsername
+          ? `Sender account "${resolvedUsername}" was not found or not accessible.`
           : 'No sender account found with an active session. Please log in first.',
       });
     }
@@ -1017,7 +1348,7 @@ const handleSendReply = async (req, res) => {
           },
         });
       } catch (dbErr) {
-        console.warn('[Server] Could not update connection_tracking after sending message:', dbErr);
+        console.warn('[Server] Could not record sent message in ConnectionTrackingRepository:', dbErr);
       }
     }
 
@@ -1031,9 +1362,9 @@ const handleSendReply = async (req, res) => {
   }
 };
 
-app.post('/api/messages/thread/reply', handleSendReply);
-app.post('/api/messages/reply', handleSendReply);
-app.post('/api/messages/send', handleSendReply);
+app.post('/api/messages/thread/reply', authenticateToken, requirePermission('messages:write'), handleSendReply);
+app.post('/api/messages/reply', authenticateToken, requirePermission('messages:write'), handleSendReply);
+app.post('/api/messages/send', authenticateToken, requirePermission('messages:write'), handleSendReply);
 
 // ── Dynamic Connection Identity Resolver ────────────────────────────────────
 const handleResolveConnection = async (req, res) => {
@@ -1061,31 +1392,22 @@ const handleResolveConnection = async (req, res) => {
   }
 };
 
-app.post('/api/connections/resolve', handleResolveConnection);
-app.get('/api/connections/resolve', handleResolveConnection);
+app.post('/api/connections/resolve', authenticateToken, requirePermission('connections:read'), handleResolveConnection);
+app.get('/api/connections/resolve', authenticateToken, requirePermission('connections:read'), handleResolveConnection);
 
 // ── Track & Process Recent Conversations Dynamically ───────────────────────
 const handleTrackConversations = async (req, res) => {
-  const username = (req.body.username || req.body.senderUsername || '').trim();
-  const userId = req.body.userId;
   const limit = req.body.limit ? parseInt(req.body.limit, 10) : 10;
   const headless = req.body.headless !== undefined ? Boolean(req.body.headless) : true;
 
   try {
-    let sender = null;
-    if (userId) {
-      sender = await TestUserRepository.getUserById(parseInt(userId, 10));
-    } else if (username) {
-      sender = await TestUserRepository.getUserByUsername(username);
-    } else {
-      sender = await TestUserRepository.getActiveSessionUser();
-    }
+    const { sender, username: resolvedUsername } = await resolveSenderUser(req);
 
     if (!sender) {
       return res.status(404).json({
         success: false,
-        error: username
-          ? `Sender account "${username}" was not found in the database.`
+        error: resolvedUsername
+          ? `Sender account "${resolvedUsername}" was not found or not accessible.`
           : 'No sender account found with an active session. Please log in first.',
       });
     }
@@ -1115,9 +1437,9 @@ const handleTrackConversations = async (req, res) => {
   }
 };
 
-app.post('/api/messages/conversations/recent', handleTrackConversations);
-app.post('/api/messages/recent', handleTrackConversations);
-app.get('/api/messages/conversations/recent', handleTrackConversations);
+app.post('/api/messages/conversations/recent', authenticateToken, requirePermission('messages:read'), handleTrackConversations);
+app.post('/api/messages/recent', authenticateToken, requirePermission('messages:read'), handleTrackConversations);
+app.get('/api/messages/conversations/recent', authenticateToken, requirePermission('messages:read'), handleTrackConversations);
 
 // ── Unified Account Scan & Index Endpoint ───────────────────────────────────
 const handleScanAndIndex = async (req, res) => {
@@ -1129,7 +1451,7 @@ const handleScanAndIndex = async (req, res) => {
     return res.status(404).json({
       success: false,
       error: username
-        ? `Sender account "${username}" was not found in the database.`
+        ? `Sender account "${username}" was not found or not accessible.`
         : 'No sender account found with an active session. Please log in first.',
     });
   }
@@ -1175,9 +1497,9 @@ const handleScanAndIndex = async (req, res) => {
   }
 };
 
-app.post('/api/account/scan-index', handleScanAndIndex);
-app.post('/api/connections/scan-index', handleScanAndIndex);
-app.get('/api/account/scan-index', handleScanAndIndex);
+app.post('/api/account/scan-index', authenticateToken, requirePermission('scan:index'), handleScanAndIndex);
+app.post('/api/connections/scan-index', authenticateToken, requirePermission('scan:index'), handleScanAndIndex);
+app.get('/api/account/scan-index', authenticateToken, requirePermission('scan:index'), handleScanAndIndex);
 
 // ── Client-side In-Browser Tracker Script ────────────────────────────────────
 app.get('/api/messages/conversations/tracker-script', (req, res) => {
@@ -1191,12 +1513,28 @@ async function resolveSenderUser(req) {
   const username = (req.body?.username || req.body?.senderUsername || req.query?.username || req.query?.senderUsername || '').trim();
 
   let sender = null;
+  const appUserId = req.appUser?.id;
+  const isAdmin = req.appUser?.role === 'admin';
+
   if (userId) {
     sender = await TestUserRepository.getUserById(parseInt(userId, 10));
+    // Enforce tenant isolation: if account does not belong to logged-in user, reject
+    if (sender && !isAdmin && appUserId && sender.app_user_id !== appUserId) {
+      console.warn(`[Security] App user ${appUserId} denied access to LinkedIn account ID ${sender.id} (${sender.username})`);
+      sender = null;
+    }
   } else if (username) {
     sender = await TestUserRepository.getUserByUsername(username);
+    if (sender && !isAdmin && appUserId && sender.app_user_id !== appUserId) {
+      console.warn(`[Security] App user ${appUserId} denied access to LinkedIn account username ${sender.username}`);
+      sender = null;
+    }
   } else {
-    sender = await TestUserRepository.getActiveSessionUser();
+    if (appUserId && !isAdmin) {
+      sender = await TestUserRepository.getActiveSessionUserForAppUser(appUserId);
+    } else {
+      sender = await TestUserRepository.getActiveSessionUser();
+    }
   }
 
   return { sender, username };
@@ -1241,8 +1579,8 @@ const handleDetectAccepted = async (req, res) => {
   }
 };
 
-app.post('/api/connections/detect-accepted', handleDetectAccepted);
-app.post('/api/connections/detect', handleDetectAccepted);
+app.post('/api/connections/detect-accepted', authenticateToken, requirePermission('connections:read'), handleDetectAccepted);
+app.post('/api/connections/detect', authenticateToken, requirePermission('connections:read'), handleDetectAccepted);
 
 // ── Detect Connections Accepted Today from /mynetwork/invite-connect/connections/ ──
 const handleDetectAcceptedToday = async (req, res) => {
@@ -1254,7 +1592,7 @@ const handleDetectAcceptedToday = async (req, res) => {
     return res.status(404).json({
       success: false,
       error: username
-        ? `Sender account "${username}" was not found in database.`
+        ? `Sender account "${username}" was not found or not accessible.`
         : 'No active sender session found. Please log in first.',
     });
   }
@@ -1283,17 +1621,17 @@ const handleDetectAcceptedToday = async (req, res) => {
   }
 };
 
-app.post('/api/connections/detect-accepted-today', handleDetectAcceptedToday);
-app.post('/api/connections/connections-today', handleDetectAcceptedToday);
-app.get('/api/connections/detect-accepted-today', handleDetectAcceptedToday);
+app.post('/api/connections/detect-accepted-today', authenticateToken, requirePermission('connections:read'), handleDetectAcceptedToday);
+app.post('/api/connections/connections-today', authenticateToken, requirePermission('connections:read'), handleDetectAcceptedToday);
+app.get('/api/connections/detect-accepted-today', authenticateToken, requirePermission('connections:read'), handleDetectAcceptedToday);
 
 // ── Method 1: Detect from Notifications Only ─────────────────────────────────
-app.post('/api/connections/detect/notifications', async (req, res) => {
+app.post('/api/connections/detect/notifications', authenticateToken, requirePermission('connections:read'), async (req, res) => {
   const { sender, username } = await resolveSenderUser(req);
   const headless = req.body.headless !== undefined ? Boolean(req.body.headless) : true;
 
   if (!sender) {
-    return res.status(404).json({ success: false, error: 'Sender account not found.' });
+    return res.status(404).json({ success: false, error: 'Sender account not found or not accessible.' });
   }
 
   try {
@@ -1306,12 +1644,12 @@ app.post('/api/connections/detect/notifications', async (req, res) => {
 });
 
 // ── Method 2: Detect from Sent Invitations Diff ─────────────────────────────
-app.post('/api/connections/detect/sent-diff', async (req, res) => {
+app.post('/api/connections/detect/sent-diff', authenticateToken, requirePermission('connections:read'), async (req, res) => {
   const { sender, username } = await resolveSenderUser(req);
   const headless = req.body.headless !== undefined ? Boolean(req.body.headless) : true;
 
   if (!sender) {
-    return res.status(404).json({ success: false, error: 'Sender account not found.' });
+    return res.status(404).json({ success: false, error: 'Sender account not found or not accessible.' });
   }
 
   try {
@@ -1324,13 +1662,13 @@ app.post('/api/connections/detect/sent-diff', async (req, res) => {
 });
 
 // ── Method 3: Detect from Connections Diff ──────────────────────────────────
-app.post('/api/connections/detect/connections-diff', async (req, res) => {
+app.post('/api/connections/detect/connections-diff', authenticateToken, requirePermission('connections:read'), async (req, res) => {
   const { sender, username } = await resolveSenderUser(req);
   const limit = req.body.limit ? parseInt(req.body.limit, 10) : 30;
   const headless = req.body.headless !== undefined ? Boolean(req.body.headless) : true;
 
   if (!sender) {
-    return res.status(404).json({ success: false, error: 'Sender account not found.' });
+    return res.status(404).json({ success: false, error: 'Sender account not found or not accessible.' });
   }
 
   try {
@@ -1343,12 +1681,12 @@ app.post('/api/connections/detect/connections-diff', async (req, res) => {
 });
 
 // ── Snapshot Sent Invitations ────────────────────────────────────────────────
-app.post('/api/connections/snapshot-sent', async (req, res) => {
+app.post('/api/connections/snapshot-sent', authenticateToken, requirePermission('connections:write'), async (req, res) => {
   const { sender, username } = await resolveSenderUser(req);
   const headless = req.body.headless !== undefined ? Boolean(req.body.headless) : true;
 
   if (!sender) {
-    return res.status(404).json({ success: false, error: 'Sender account not found.' });
+    return res.status(404).json({ success: false, error: 'Sender account not found or not accessible.' });
   }
 
   try {
@@ -1361,13 +1699,13 @@ app.post('/api/connections/snapshot-sent', async (req, res) => {
 });
 
 // ── Snapshot Connections List ────────────────────────────────────────────────
-app.post('/api/connections/snapshot-connections', async (req, res) => {
+app.post('/api/connections/snapshot-connections', authenticateToken, requirePermission('connections:write'), async (req, res) => {
   const { sender, username } = await resolveSenderUser(req);
   const limit = req.body.limit ? parseInt(req.body.limit, 10) : 50;
   const headless = req.body.headless !== undefined ? Boolean(req.body.headless) : true;
 
   if (!sender) {
-    return res.status(404).json({ success: false, error: 'Sender account not found.' });
+    return res.status(404).json({ success: false, error: 'Sender account not found or not accessible.' });
   }
 
   try {
@@ -1380,10 +1718,10 @@ app.post('/api/connections/snapshot-connections', async (req, res) => {
 });
 
 // ── Query Accepted Contacts from DB (No Browser) ────────────────────────────
-app.get('/api/connections/accepted', async (req, res) => {
+app.get('/api/connections/accepted', authenticateToken, requirePermission('connections:read'), async (req, res) => {
   const { sender } = await resolveSenderUser(req);
   if (!sender) {
-    return res.status(404).json({ success: false, error: 'Sender account not found.' });
+    return res.status(404).json({ success: false, error: 'Sender account not found or not accessible.' });
   }
 
   try {
@@ -1406,10 +1744,10 @@ app.get('/api/connections/accepted', async (req, res) => {
 });
 
 // ── Query Accepted Contacts Today from DB (No Browser) ──────────────────────
-app.get('/api/connections/accepted-today', async (req, res) => {
+app.get('/api/connections/accepted-today', authenticateToken, requirePermission('connections:read'), async (req, res) => {
   const { sender } = await resolveSenderUser(req);
   if (!sender) {
-    return res.status(404).json({ success: false, error: 'Sender account not found.' });
+    return res.status(404).json({ success: false, error: 'Sender account not found or not accessible.' });
   }
 
   try {
@@ -1431,10 +1769,10 @@ app.get('/api/connections/accepted-today', async (req, res) => {
 });
 
 // ── Query Pending Contacts from DB (No Browser) ─────────────────────────────
-app.get('/api/connections/pending', async (req, res) => {
+app.get('/api/connections/pending', authenticateToken, requirePermission('connections:read'), async (req, res) => {
   const { sender } = await resolveSenderUser(req);
   if (!sender) {
-    return res.status(404).json({ success: false, error: 'Sender account not found.' });
+    return res.status(404).json({ success: false, error: 'Sender account not found or not accessible.' });
   }
 
   try {
@@ -1456,10 +1794,10 @@ app.get('/api/connections/pending', async (req, res) => {
 });
 
 // ── Query Complete Tracking History & Stats from DB ─────────────────────────
-app.get(['/api/connections/history', '/api/connections/all'], async (req, res) => {
+app.get(['/api/connections/history', '/api/connections/all'], authenticateToken, requirePermission('connections:read'), async (req, res) => {
   const { sender } = await resolveSenderUser(req);
   if (!sender) {
-    return res.status(404).json({ success: false, error: 'Sender account not found.' });
+    return res.status(404).json({ success: false, error: 'Sender account not found or not accessible.' });
   }
 
   try {
@@ -1481,10 +1819,10 @@ app.get(['/api/connections/history', '/api/connections/all'], async (req, res) =
 });
 
 // ── Query Tracking Stats Only ────────────────────────────────────────────────
-app.get('/api/connections/stats', async (req, res) => {
+app.get('/api/connections/stats', authenticateToken, requirePermission('connections:read'), async (req, res) => {
   const { sender } = await resolveSenderUser(req);
   if (!sender) {
-    return res.status(404).json({ success: false, error: 'Sender account not found.' });
+    return res.status(404).json({ success: false, error: 'Sender account not found or not accessible.' });
   }
 
   try {
@@ -1502,10 +1840,10 @@ app.get('/api/connections/stats', async (req, res) => {
 });
 
 // ── Manually Track / Update a Contact ────────────────────────────────────────
-app.post('/api/connections/track', async (req, res) => {
+app.post('/api/connections/track', authenticateToken, requirePermission('connections:write'), async (req, res) => {
   const { sender } = await resolveSenderUser(req);
   if (!sender) {
-    return res.status(404).json({ success: false, error: 'Sender account not found.' });
+    return res.status(404).json({ success: false, error: 'Sender account not found or not accessible.' });
   }
 
   const { recipientName, recipientVanity, recipientProfileUrl, recipientHeadline, status, note } = req.body;
@@ -1534,6 +1872,102 @@ app.post('/api/connections/track', async (req, res) => {
   }
 });
 
+
+// ── LinkedIn Company Search ─────────────────────────────────────────────────
+const handleCompanySearch = async (req, res) => {
+  const keyword = req.body?.keyword || req.query?.keyword || '';
+  const country = req.body?.country || req.query?.country || '';
+  const countryGeoId = req.body?.countryGeoId || req.query?.countryGeoId || '';
+  const headless = req.body?.headless !== undefined ? Boolean(req.body.headless) : true;
+  const limit = req.body?.limit ? parseInt(req.body.limit, 10) : 20;
+
+  if (!keyword || !String(keyword).trim()) {
+    return res.status(400).json({ success: false, error: 'keyword is required' });
+  }
+
+  const { sender, username } = await resolveSenderUser(req);
+  if (!sender) {
+    return res.status(404).json({
+      success: false,
+      error: username
+        ? `LinkedIn account "${username}" not found or not accessible to your account.`
+        : 'No active LinkedIn session found. Please connect your LinkedIn account first.',
+    });
+  }
+
+  try {
+    const geoDesc = country ? ` [Country: ${country}${countryGeoId ? ` / Geo: ${countryGeoId}` : ''}]` : '';
+    console.log(`[Server] Company search: "${keyword}"${geoDesc} by ${req.appUser.email} using LinkedIn account ${sender.username}`);
+    const result = await CompanySearchService.searchCompanies({
+      user: sender,
+      keyword: String(keyword).trim(),
+      country: String(country).trim() || undefined,
+      countryGeoId: String(countryGeoId).trim() || undefined,
+      headless,
+      limit,
+    });
+    res.json(result);
+  } catch (error) {
+    console.error('[Server] Company search error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+app.post('/api/company/search', authenticateToken, requirePermission('connections:read'), handleCompanySearch);
+app.get('/api/company/search', authenticateToken, requirePermission('connections:read'), handleCompanySearch);
+
+// Helper endpoint to get all supported country Geo URNs
+app.get('/api/company/countries', authenticateToken, (req, res) => {
+  res.json({ success: true, countries: LINKEDIN_COUNTRY_GEO_MAP });
+});
+
+// ── LinkedIn Company People Search ──────────────────────────────────────────
+const handleCompanyPeopleSearch = async (req, res) => {
+  const companyId = req.body?.companyId || req.query?.companyId || '';
+  const companyName = req.body?.companyName || req.query?.companyName || '';
+  const position = req.body?.position || req.query?.position || '';
+  const name = req.body?.name || req.query?.name || '';
+  const keywords = req.body?.keywords || req.query?.keywords || '';
+  const network = req.body?.network || req.query?.network || '';
+  const headless = req.body?.headless !== undefined ? Boolean(req.body.headless) : true;
+  const limit = req.body?.limit ? parseInt(req.body.limit, 10) : 25;
+
+  if (!companyId || !String(companyId).trim()) {
+    return res.status(400).json({ success: false, error: 'companyId is required (e.g. 67952029)' });
+  }
+
+  const { sender, username } = await resolveSenderUser(req);
+  if (!sender) {
+    return res.status(404).json({
+      success: false,
+      error: username
+        ? `LinkedIn account "${username}" not found or not accessible to your account.`
+        : 'No active LinkedIn session found. Please connect your LinkedIn account first.',
+    });
+  }
+
+  try {
+    console.log(`[Server] Company People search: Company ID ${companyId} (${companyName || 'N/A'}) - Position: "${position}", Name: "${name}" by ${req.appUser.email} using LinkedIn account ${sender.username}`);
+    const result = await CompanyPeopleSearchService.searchPeopleInCompany({
+      user: sender,
+      companyId: String(companyId).trim(),
+      companyName: String(companyName).trim() || undefined,
+      position: String(position).trim() || undefined,
+      name: String(name).trim() || undefined,
+      keywords: String(keywords).trim() || undefined,
+      network: String(network).trim() || undefined,
+      headless,
+      limit,
+    });
+    res.json(result);
+  } catch (error) {
+    console.error('[Server] Company People search error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+app.post('/api/company/people-search', authenticateToken, requirePermission('connections:read'), handleCompanyPeopleSearch);
+app.get('/api/company/people-search', authenticateToken, requirePermission('connections:read'), handleCompanyPeopleSearch);
 
 const server = app.listen(PORT, () => {
   console.log(`🚀 LinkedIn Automation Server running on http://localhost:${PORT}`);

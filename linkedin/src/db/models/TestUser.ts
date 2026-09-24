@@ -22,6 +22,7 @@ export interface StorageStateData {
 
 export interface LinkedInTestUser {
   id: number;
+  app_user_id?: number | null;
   username: string;
   password: string;
   login_try: number; // 1 = target for login, 0 = skip

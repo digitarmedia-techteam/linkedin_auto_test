@@ -11,6 +11,7 @@ import { logger } from '../../utils/logger.js';
 
 interface UserRow extends RowDataPacket {
   id: number;
+  app_user_id: number | null;
   username: string;
   password: string;
   login_try: number;
@@ -44,6 +45,7 @@ function mapRowToUser(row: UserRow): LinkedInTestUser {
 
   return {
     id: row.id,
+    app_user_id: row.app_user_id ?? null,
     username: row.username,
     password: row.password,
     login_try: row.login_try,
@@ -122,6 +124,18 @@ export const TestUserRepository = {
   },
 
   /**
+   * Fetches all LinkedIn accounts belonging to a specific platform app_user.
+   */
+  async getUsersByAppUserId(appUserId: number): Promise<LinkedInTestUser[]> {
+    const pool = getDbPool();
+    const [rows] = await pool.query<UserRow[]>(
+      `SELECT * FROM linkedin_test_users WHERE app_user_id = ? ORDER BY id ASC`,
+      [appUserId],
+    );
+    return rows.map(mapRowToUser);
+  },
+
+  /**
    * Finds a test user by username (email).
    */
   async getUserByUsername(username: string): Promise<LinkedInTestUser | null> {
@@ -129,6 +143,19 @@ export const TestUserRepository = {
     const [rows] = await pool.query<UserRow[]>(
       `SELECT * FROM linkedin_test_users WHERE username = ? LIMIT 1`,
       [username],
+    );
+    if (rows.length === 0 || !rows[0]) return null;
+    return mapRowToUser(rows[0]);
+  },
+
+  /**
+   * Finds a test user by username and specific app_user_id.
+   */
+  async getUserByUsernameAndAppUser(username: string, appUserId: number): Promise<LinkedInTestUser | null> {
+    const pool = getDbPool();
+    const [rows] = await pool.query<UserRow[]>(
+      `SELECT * FROM linkedin_test_users WHERE username = ? AND app_user_id = ? LIMIT 1`,
+      [username, appUserId],
     );
     if (rows.length === 0 || !rows[0]) return null;
     return mapRowToUser(rows[0]);
@@ -213,6 +240,7 @@ export const TestUserRepository = {
   async upsertUser(user: {
     username: string;
     password: string;
+    app_user_id?: number | null;
     login_try?: number;
     status?: UserStatus;
     storage_state_json?: string | null;
@@ -220,6 +248,7 @@ export const TestUserRepository = {
     user_agent?: string | null;
   }): Promise<void> {
     const pool = getDbPool();
+    const appUserId = user.app_user_id ?? null;
     const loginTry = user.login_try ?? 1;
     const status = user.status ?? 'active';
     const storageStateJson = user.storage_state_json ?? null;
@@ -243,10 +272,11 @@ export const TestUserRepository = {
 
     const query = `
       INSERT INTO linkedin_test_users (
-        username, password, login_try, status, storage_state_json, session_cookies_json,
+        app_user_id, username, password, login_try, status, storage_state_json, session_cookies_json,
         li_at_token, user_agent, meta_data
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE
+        app_user_id = COALESCE(VALUES(app_user_id), app_user_id),
         password = VALUES(password),
         login_try = VALUES(login_try),
         status = VALUES(status),
@@ -258,6 +288,7 @@ export const TestUserRepository = {
     `;
 
     await pool.query<ResultSetHeader>(query, [
+      appUserId,
       user.username,
       user.password,
       loginTry,
@@ -269,7 +300,7 @@ export const TestUserRepository = {
       metaDataJson,
     ]);
 
-    logger.info(`[TestUserRepository] Upserted user: ${user.username} (login_try = ${String(loginTry)})`);
+    logger.info(`[TestUserRepository] Upserted user: ${user.username} (app_user_id = ${String(appUserId)}, login_try = ${String(loginTry)})`);
   },
 
   /**
@@ -292,6 +323,22 @@ export const TestUserRepository = {
        WHERE storage_state_json IS NOT NULL AND status = 'active'
        ORDER BY last_login_at DESC, id DESC 
        LIMIT 1`
+    );
+    if (rows.length === 0 || !rows[0]) return null;
+    return mapRowToUser(rows[0]);
+  },
+
+  /**
+   * Retrieves the most recently authenticated LinkedIn account for a specific platform user.
+   */
+  async getActiveSessionUserForAppUser(appUserId: number): Promise<LinkedInTestUser | null> {
+    const pool = getDbPool();
+    const [rows] = await pool.query<UserRow[]>(
+      `SELECT * FROM linkedin_test_users 
+       WHERE app_user_id = ? AND storage_state_json IS NOT NULL AND status = 'active'
+       ORDER BY last_login_at DESC, id DESC 
+       LIMIT 1`,
+      [appUserId]
     );
     if (rows.length === 0 || !rows[0]) return null;
     return mapRowToUser(rows[0]);
