@@ -201,7 +201,7 @@ export class DirectConnectionService {
           };
         }
       } catch (dbErr) {
-        logger.warn('[DirectConnection] Could not query database during pre-flight check:', dbErr);
+        logger.warn(`[DirectConnection] Could not query database during pre-flight check: ${(dbErr as Error)?.message || dbErr}`);
       }
     }
 
@@ -416,7 +416,7 @@ export class DirectConnectionService {
             });
           }
         } catch (dbErr) {
-          logger.warn('[DirectConnection] Could not update database for accepted connection:', dbErr);
+          logger.warn(`[DirectConnection] Could not update database for accepted connection: ${(dbErr as Error)?.message || dbErr}`);
         }
 
         return {
@@ -451,7 +451,7 @@ export class DirectConnectionService {
             });
           }
         } catch (dbErr) {
-          logger.warn('[DirectConnection] Could not update database for pending status:', dbErr);
+          logger.warn(`[DirectConnection] Could not update database for pending status: ${(dbErr as Error)?.message || dbErr}`);
         }
 
         return {

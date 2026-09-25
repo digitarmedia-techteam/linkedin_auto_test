@@ -255,9 +255,9 @@ export class AcceptedConnectionsService {
         '.nt-card, article[data-activity-id], .notification-item, div[data-artdeco-is-focused], .artdeco-list__item',
       );
 
-      const itemsToScan = cards.length > 0 ? Array.from(cards) : Array.from(document.querySelectorAll('main a, main article, main li'));
+      const itemsToScan: Element[] = cards.length > 0 ? Array.from(cards) : Array.from(document.querySelectorAll('main a, main article, main li'));
 
-      itemsToScan.forEach((card) => {
+      itemsToScan.forEach((card: Element) => {
         const text = (card as HTMLElement).innerText || '';
         if (/accepted\s+your\s+invitation/i.test(text) || /accepted\s+your\s+connection/i.test(text)) {
           const profileLink = card.querySelector('a[href*="/in/"]') as HTMLAnchorElement | null;
@@ -278,7 +278,7 @@ export class AcceptedConnectionsService {
       // If cards query didn't capture, fallback to scanning document body text segments
       if (results.length === 0) {
         const bodyText = document.body.innerText || '';
-        const lines = bodyText.split('\n').map((l) => l.trim()).filter(Boolean);
+        const lines = bodyText.split('\n').map((l: string) => l.trim()).filter(Boolean);
         for (let i = 0; i < lines.length; i++) {
           const line = lines[i];
           if (/accepted\s+your\s+invitation/i.test(line) || /accepted\s+your\s+connection/i.test(line)) {
@@ -379,7 +379,7 @@ export class AcceptedConnectionsService {
 
       // 1. Structured DOM scan for cards with links
       const invitationRows = document.querySelectorAll('.invitation-card, li.artdeco-list__item, div.mn-invitation-list__item');
-      invitationRows.forEach((row) => {
+      invitationRows.forEach((row: Element) => {
         const link = row.querySelector('a[href*="/in/"]') as HTMLAnchorElement | null;
         const nameEl = row.querySelector('.invitation-card__title, .mn-invitation-card__name, h3, strong, a[href*="/in/"] span');
         const headlineEl = row.querySelector('.invitation-card__subtitle, .mn-invitation-card__occupation, p');
@@ -403,7 +403,7 @@ export class AcceptedConnectionsService {
         const sections = bodyText.split(/\n\s*Withdraw\s*\n/);
         for (let i = 0; i < sections.length - 1; i++) {
           const sec = sections[i].trim();
-          const lines = sec.split('\n').map((l) => l.trim()).filter((l) => l.length > 0);
+          const lines = sec.split('\n').map((l: string) => l.trim()).filter((l: string) => l.length > 0);
           if (lines.length < 2) continue;
 
           const lastLine = lines[lines.length - 1] || '';
@@ -480,7 +480,7 @@ export class AcceptedConnectionsService {
         '.invitation-card, section.mn-invitations-preview, div[data-view-name*="invitation"], div.artdeco-card, main div[tabindex="-1"], section, div'
       );
 
-      cards.forEach((card) => {
+      cards.forEach((card: Element) => {
         const text = (card as HTMLElement).innerText || '';
         if (/accepted\s+your\s+invitation/i.test(text) || /accepted\s+your\s+connection/i.test(text)) {
           const link = card.querySelector('a[href*="/in/"]') as HTMLAnchorElement | null;
@@ -574,7 +574,7 @@ export class AcceptedConnectionsService {
         const containers = document.querySelectorAll(
           '.scaffold-finite-scroll, .scaffold-layout__main, main, [data-scaffold-center], div.mn-connections, ul.mn-connections-list, div[data-component-type="LazyColumn"]'
         );
-        containers.forEach((el) => {
+        containers.forEach((el: Element) => {
           try {
             el.scrollBy(0, 1000);
             el.scrollTop += 1000;
@@ -619,7 +619,7 @@ export class AcceptedConnectionsService {
       });
 
       const candidateContainers: Element[] = [...cardElements];
-      profileAnchors.forEach((a) => {
+      profileAnchors.forEach((a: Element) => {
         const parentCard = a.closest('div[componentkey*="ConnectionCard"], li, article, div[class*="entity-lockup"], div[data-ch-name], .mn-connection-card, .artdeco-list__item, [data-view-name]');
         if (parentCard && !candidateContainers.includes(parentCard)) {
           candidateContainers.push(parentCard);
@@ -628,7 +628,7 @@ export class AcceptedConnectionsService {
         }
       });
 
-      candidateContainers.forEach((card) => {
+      candidateContainers.forEach((card: Element) => {
         if (results.length >= maxItems) return;
 
         const link = (card.querySelector('a[href*="/in/"]') || (card.matches('a[href*="/in/"]') ? card : null)) as HTMLAnchorElement | null;
@@ -660,7 +660,7 @@ export class AcceptedConnectionsService {
           card.querySelector(
             'a[href*="/messaging/compose"], a[href*="/messaging/"], a[aria-label*="Message"], button[aria-label*="Message"], button.message-anywhere-button'
           ) ||
-          Array.from(card.querySelectorAll('a, button')).find((el) => {
+          Array.from(card.querySelectorAll('a, button')).find((el: Element) => {
             const txt = (el.textContent || '').trim().toLowerCase();
             const aria = (el.getAttribute('aria-label') || '').toLowerCase();
             return txt === 'message' || aria.includes('message');
@@ -708,17 +708,18 @@ export class AcceptedConnectionsService {
         if (messageBtn) {
           const rawHref = messageBtn.getAttribute('href') || (messageBtn instanceof HTMLAnchorElement ? messageBtn.href : '');
           if (rawHref) {
-            messageHref = rawHref.startsWith('http') ? rawHref : `https://www.linkedin.com${rawHref}`;
+            const fullMessageHref = rawHref.startsWith('http') ? rawHref : `https://www.linkedin.com${rawHref}`;
+            messageHref = fullMessageHref;
             try {
-              const parsedUrl = new URL(messageHref);
+              const parsedUrl = new URL(fullMessageHref);
               const rParam = parsedUrl.searchParams.get('recipient');
               const pParam = parsedUrl.searchParams.get('profileUrn');
               if (rParam) recipientUrn = rParam;
               if (pParam) profileUrn = pParam;
             } catch (e) {
-              const rMatch = messageHref.match(/[?&]recipient=([^&]+)/i);
+              const rMatch = fullMessageHref.match(/[?&]recipient=([^&]+)/i);
               if (rMatch) recipientUrn = decodeURIComponent(rMatch[1]);
-              const pMatch = messageHref.match(/[?&]profileUrn=([^&]+)/i);
+              const pMatch = fullMessageHref.match(/[?&]profileUrn=([^&]+)/i);
               if (pMatch) profileUrn = decodeURIComponent(pMatch[1]);
             }
           }
@@ -842,7 +843,7 @@ export class AcceptedConnectionsService {
     // Extract matching card
     const resolved = await page.evaluate((searchQuery) => {
       const qLower = searchQuery.toLowerCase().trim();
-      const cardElements = Array.from(
+      const cardElements: Element[] = Array.from(
         document.querySelectorAll(
           'div[componentkey*="ConnectionCard"], .mn-connection-card, li.mn-connection-card, div[data-component-type="LazyColumn"] > div, .scaffold-finite-scroll__content li'
         )
@@ -887,10 +888,11 @@ export class AcceptedConnectionsService {
         if (messageBtn) {
           const rawHref = messageBtn.getAttribute('href') || (messageBtn instanceof HTMLAnchorElement ? messageBtn.href : '');
           if (rawHref) {
-            messageHref = rawHref.startsWith('http') ? rawHref : `https://www.linkedin.com${rawHref}`;
-            const rMatch = messageHref.match(/[?&]recipient=([^&]+)/i);
+            const fullMessageHref = rawHref.startsWith('http') ? rawHref : `https://www.linkedin.com${rawHref}`;
+            messageHref = fullMessageHref;
+            const rMatch = fullMessageHref.match(/[?&]recipient=([^&]+)/i);
             if (rMatch) recipientUrn = decodeURIComponent(rMatch[1]);
-            const pMatch = messageHref.match(/[?&]profileUrn=([^&]+)/i);
+            const pMatch = fullMessageHref.match(/[?&]profileUrn=([^&]+)/i);
             if (pMatch) profileUrn = decodeURIComponent(pMatch[1]);
           }
         }
@@ -1408,7 +1410,7 @@ export class AcceptedConnectionsService {
       logger.info(`[AcceptedConnections] Detecting connections accepted today for "${user.username}" across Connections, Notifications, and Grow sources...`);
 
       // ── Source 1: LinkedIn Connections List Page ────────────────────────────
-      let connectionsListResult = { totalConnectionsCount: undefined as string | undefined, connections: [] as ConnectionListItem[] };
+      let connectionsListResult: { totalConnectionsCount?: string; connections: ConnectionListItem[] } = { connections: [] };
       try {
         connectionsListResult = await this.scrapeConnectionsListOnPage(page, limit);
       } catch (errConn) {

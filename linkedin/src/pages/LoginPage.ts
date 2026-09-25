@@ -29,7 +29,7 @@ export class LoginPage {
   private get errorBanner() { return this.page.locator('[role="alert"], .error-message').first(); }
 
   /** Navigate to the login page. */
-  async open(): Promise<void> {
+  async open(user?: { id?: number; username: string }): Promise<void> {
     logger.info('[LoginPage] Navigating to login page.');
     await this.page.goto('/login', {
       waitUntil: 'domcontentloaded',
@@ -62,17 +62,10 @@ export class LoginPage {
     const currentUrl = this.page.url();
     if (currentUrl.includes('/checkpoint') || currentUrl.includes('/challenge')) {
       logger.info(
-        '[LoginPage] Security challenge / CAPTCHA detected. Please complete it in the browser window (waiting up to 120s)...',
+        `[LoginPage] Security challenge detected on navigation (${currentUrl}). Triggering verification flow...`,
       );
-      try {
-        await this.page.waitForURL('**/feed/**', { timeout: 120_000 });
-        logger.info('[LoginPage] Challenge resolved — redirected to feed.');
-        return;
-      } catch {
-        throw new AuthenticationError(
-          'Security challenge was not completed within 120 seconds. Please re-run and solve the check.',
-        );
-      }
+      await this.handleSmsVerification(user);
+      return;
     }
 
     if (!result) {
@@ -124,42 +117,62 @@ export class LoginPage {
 
     logger.info('[LoginPage] Waiting for post-login destination (feed or checkpoint challenge)...');
 
-    // Race to detect feed redirect OR checkpoint / challenge redirect
-    const outcome = await Promise.race([
-      this.page
-        .waitForURL('**/feed/**', { timeout: 35_000 })
-        .then(() => 'feed' as const)
-        .catch(() => null),
-      this.page
-        .waitForURL('**/checkpoint/**', { timeout: 35_000 })
-        .then(() => 'checkpoint' as const)
-        .catch(() => null),
-      this.page
-        .waitForURL('**/challenge/**', { timeout: 35_000 })
-        .then(() => 'checkpoint' as const)
-        .catch(() => null),
-      this.page
-        .locator('#try-another-way, a:has-text("Verify using SMS"), button#two-step-submit-button')
-        .first()
-        .waitFor({ state: 'visible', timeout: 35_000 })
-        .then(() => 'checkpoint' as const)
-        .catch(() => null),
-    ]);
+    // Broad set of challenge and PIN input selectors
+    const challengeIndicatorSelector = [
+      '#try-another-way',
+      'a:has-text("Verify using SMS")',
+      'button#two-step-submit-button',
+      'input[name="pin"]',
+      'input#input__phone_verification_pin',
+      'input#input__email_verification_pin',
+      'input#two-step-verification-code',
+      'input[name="verificationCode"]',
+      'input[name="code"]',
+      'input[placeholder*="code" i]',
+      'input[placeholder*="pin" i]',
+      'input[aria-label*="code" i]',
+      'input[aria-label*="pin" i]',
+      'input[type="tel"]',
+      'button:has-text("Submit code")',
+      'button:has-text("Verify")',
+    ].join(', ');
 
-    const currentUrl = this.page.url();
-    if (currentUrl.includes('/feed')) {
-      logger.info('[LoginPage] Redirected directly to feed — login successful.');
-      return;
+    // Fast-polling loop: detect feed or challenge in real-time (up to 35 seconds)
+    const startTime = Date.now();
+    let detectedChallenge = false;
+
+    while (Date.now() - startTime < 35_000) {
+      const currentUrl = this.page.url();
+      if (currentUrl.includes('/feed')) {
+        logger.info('[LoginPage] Redirected directly to feed — login successful.');
+        return;
+      }
+
+      const isChallengeUrl =
+        currentUrl.includes('/checkpoint') ||
+        currentUrl.includes('/challenge') ||
+        currentUrl.includes('/uas/consumer-login-submit') ||
+        currentUrl.includes('/checkpoint/lg/login-submit');
+
+      if (isChallengeUrl) {
+        detectedChallenge = true;
+        break;
+      }
+
+      try {
+        const challengeCount = await this.page.locator(challengeIndicatorSelector).count();
+        if (challengeCount > 0) {
+          detectedChallenge = true;
+          break;
+        }
+      } catch {}
+
+      await this.page.waitForTimeout(600);
     }
 
-    // Check if on checkpoint or challenge
-    if (
-      outcome === 'checkpoint' ||
-      currentUrl.includes('/checkpoint') ||
-      currentUrl.includes('/challenge') ||
-      (await this.page.locator('#try-another-way, a:has-text("Verify using SMS"), button#two-step-submit-button').count()) > 0
-    ) {
-      logger.info(`[LoginPage] Checkpoint/challenge detected at ${currentUrl}. Proceeding to SMS verification flow...`);
+    if (detectedChallenge) {
+      const currentUrl = this.page.url();
+      logger.info(`[LoginPage] Checkpoint/challenge detected at ${currentUrl}. Proceeding to SMS/OTP verification flow...`);
       await this.handleSmsVerification(user);
       return;
     }
@@ -189,30 +202,28 @@ export class LoginPage {
    */
   async handleSmsVerification(user?: { id?: number; username: string }): Promise<void> {
     const username = user?.username ?? 'user';
-    logger.info(`[LoginPage] [${username}] Starting SMS verification handling...`);
+    logger.info(`[LoginPage] [${username}] Starting SMS verification handling. Registering OTP challenge immediately...`);
 
-    // Step 1: Look for "Verify using SMS" button / link
-    // <div class="try_another_way"><a id="try-another-way" tabindex="0" role="link">Verify using SMS</a></div>
+    // Register OTP challenge IMMEDIATELY so the web UI detects waiting_for_otp without any delay
+    const otpPromise = OtpChallengeService.requestOtp(username, user?.id, 180_000);
+
+    // Look for "Verify using SMS" button / link if presented
     const tryAnotherWay = this.page.locator(
       '#try-another-way, a#try-another-way, .try_another_way a, a:has-text("Verify using SMS"), button:has-text("Verify using SMS")'
     ).first();
 
     try {
-      if (await tryAnotherWay.isVisible({ timeout: 5000 })) {
+      if (await tryAnotherWay.isVisible({ timeout: 2500 })) {
         logger.info(`[LoginPage] [${username}] Found "Verify using SMS" button. Clicking it now...`);
         await tryAnotherWay.click();
         await this.page.waitForLoadState('domcontentloaded').catch(() => {});
-        await this.page.waitForTimeout(1500);
+        await this.page.waitForTimeout(1000);
       } else {
         logger.info(`[LoginPage] [${username}] "Verify using SMS" button not found or already on SMS challenge screen.`);
       }
     } catch (e) {
       logger.warn(`[LoginPage] [${username}] Checking try-another-way: ${(e as Error).message}`);
     }
-
-    // Step 2: Register OTP challenge for 3 minutes (180s) so UI modal opens immediately
-    logger.info(`[LoginPage] [${username}] Registering OTP challenge for 3 minutes (180s)...`);
-    const otpPromise = OtpChallengeService.requestOtp(username, user?.id, 180_000);
 
     try {
       // Step 3: Locate the visible PIN input on the page

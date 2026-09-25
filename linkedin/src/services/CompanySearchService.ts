@@ -144,7 +144,7 @@ export class CompanySearchService {
     if (!countryInput || !countryInput.trim()) return null;
 
     const normalized = countryInput.trim().toLowerCase().replace(/[\s\-_,\.]+/g, '');
-    
+
     // Check direct normalized match
     if (LINKEDIN_COUNTRY_GEO_MAP[normalized]) {
       const match = LINKEDIN_COUNTRY_GEO_MAP[normalized];
@@ -260,7 +260,7 @@ export class CompanySearchService {
           '.org-page-details-module__definition-list, .artdeco-card, dl, section.artdeco-card',
           { timeout: 8_000 }
         );
-      } catch {}
+      } catch { }
 
       await page.waitForTimeout(1000);
 
@@ -371,7 +371,7 @@ export class CompanySearchService {
               pageNumericCompanyId = m[1];
               break;
             }
-          } catch {}
+          } catch { }
         }
 
         if (!pageNumericCompanyId) {
@@ -450,7 +450,7 @@ export class CompanySearchService {
       // Construct search URL with country facet if specified
       let searchUrl = `https://www.linkedin.com/search/results/companies/?keywords=${encodeURIComponent(trimmedKeyword)}`;
       if (resolvedGeo && resolvedGeo.geoId) {
-        searchUrl += `&origin=FACETED_SEARCH&companyHqGeo=${encodeURIComponent('["' + resolvedGeo.geoId + '"]')}`;
+        searchUrl += `&origin=GLOBAL_SEARCH_HEADER&companyHqGeo=${encodeURIComponent('["' + resolvedGeo.geoId + '"]')}`;
       } else {
         searchUrl += `&origin=SPELL_CHECK_REPLACE&spellCorrectionEnabled=false`;
       }
@@ -478,7 +478,7 @@ export class CompanySearchService {
       try {
         await page.evaluate(() => window.scrollBy(0, 600));
         await page.waitForTimeout(1500);
-      } catch {}
+      } catch { }
 
       const candidateResults = await page.evaluate((maxResults: number) => {
         const companies: any[] = [];
@@ -545,7 +545,7 @@ export class CompanySearchService {
                     numericCompanyId = m[1];
                     break;
                   }
-                } catch {}
+                } catch { }
               }
             }
 
@@ -572,7 +572,7 @@ export class CompanySearchService {
 
             // Extract Subtitles / Followers / Description
             const textNodes = Array.from(container.querySelectorAll('p, span, div')).map(el => el.textContent?.trim() || '').filter(Boolean);
-            
+
             let industry: string | null = null;
             let location: string | null = null;
             let followers: string | null = null;
@@ -669,8 +669,8 @@ export class CompanySearchService {
         timestamp,
       };
     } finally {
-      try { if (context) await context.close(); } catch {}
-      try { if (browser) await browser.close(); } catch {}
+      try { if (context) await context.close(); } catch { }
+      try { if (browser) await browser.close(); } catch { }
     }
   }
 }

@@ -209,7 +209,7 @@ export const MultiUserLoginCronService = {
       // 2. Perform fresh login if session is invalid or missing
       if (!sessionValid) {
         logger.info(`[CronService] [User ${String(user.id)}] Performing fresh login for ${user.username}`);
-        await loginPage.open();
+        await loginPage.open(user);
         await loginPage.login(user.username, user.password);
         await loginPage.waitForSuccessfulLogin(user);
         loginType = 'fresh_login';

@@ -273,8 +273,8 @@ export const TestUserRepository = {
     const query = `
       INSERT INTO linkedin_test_users (
         app_user_id, username, password, login_try, status, storage_state_json, session_cookies_json,
-        li_at_token, user_agent, meta_data
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        li_at_token, user_agent, proxy, meta_data
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE
         app_user_id = COALESCE(VALUES(app_user_id), app_user_id),
         password = VALUES(password),
@@ -284,6 +284,7 @@ export const TestUserRepository = {
         session_cookies_json = COALESCE(VALUES(session_cookies_json), session_cookies_json),
         li_at_token = COALESCE(VALUES(li_at_token), li_at_token),
         user_agent = COALESCE(VALUES(user_agent), user_agent),
+        proxy = COALESCE(VALUES(proxy), proxy),
         meta_data = COALESCE(VALUES(meta_data), meta_data);
     `;
 
@@ -297,6 +298,7 @@ export const TestUserRepository = {
       cookiesJson,
       liAtToken,
       user.user_agent ?? null,
+      user.proxy ?? null,
       metaDataJson,
     ]);
 
@@ -384,5 +386,18 @@ export const TestUserRepository = {
     `;
     await pool.query(query, [status, error ?? null, userId]);
     logger.info(`[TestUserRepository] Updated user ${String(userId)} session status to "${status}"`);
+  },
+
+  /**
+   * Deletes a LinkedIn user record and cascades to associated data.
+   */
+  async deleteUser(userId: number): Promise<boolean> {
+    const pool = getDbPool();
+    const [result] = await pool.query<ResultSetHeader>(
+      `DELETE FROM linkedin_test_users WHERE id = ?`,
+      [userId]
+    );
+    logger.info(`[TestUserRepository] Deleted user ${String(userId)}`);
+    return result.affectedRows > 0;
   },
 };

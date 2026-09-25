@@ -1,5 +1,5 @@
 export type ConnectionStatus = 'pending' | 'accepted' | 'withdrawn' | 'rejected';
-export type DetectedVia = 'notification' | 'sent_diff' | 'connections_diff' | 'manual' | 'invite_api';
+export type DetectedVia = 'notification' | 'sent_diff' | 'connections_diff' | 'manual' | 'invite_api' | 'profile_check';
 
 export interface ConnectionTracking {
   id: number;

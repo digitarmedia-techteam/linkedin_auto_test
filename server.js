@@ -36,7 +36,13 @@ const PORT = process.env.PORT || 3011;
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public'), {
+  setHeaders: (res) => {
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+  }
+}));
 
 // Initialize database tables on server startup
 AppUserRepository.initTables().catch((err) => {
@@ -480,29 +486,72 @@ app.get('/api/users', authenticateToken, async (req, res) => {
   }
 });
 
+/**
+ * Helper to validate LinkedIn account ownership & connection limits:
+ * 1. Each LinkedIn account (by username) can only be associated with 1 platform user.
+ *    If an account already exists and is associated with another user, reject with:
+ *    "This account is already connected with another account"
+ * 2. User/Manager role can only connect 1 LinkedIn account.
+ *    If they already have an account and try to add a new/different account, reject with:
+ *    "User or Manager role can only connect 1 LinkedIn account. Please disconnect your current account before connecting a new one."
+ */
+async function validateLinkedInAccountLimits(appUser, rawUsername) {
+  if (!rawUsername) return null;
+  const username = String(rawUsername).trim();
+
+  // 1. Check if this LinkedIn account is already connected to another user
+  const existingAccount = await TestUserRepository.getUserByUsername(username);
+  if (existingAccount && existingAccount.app_user_id) {
+    if (appUser && Number(existingAccount.app_user_id) !== Number(appUser.id)) {
+      return 'this account is already connect with another account';
+    }
+  }
+
+  // 2. Check 1-account limit for user and manager roles
+  if (appUser && (appUser.role === 'user' || appUser.role === 'manager')) {
+    const userAccounts = await TestUserRepository.getUsersByAppUserId(appUser.id);
+    const isSameAccount = userAccounts.some(
+      (acc) => acc.username.toLowerCase() === username.toLowerCase()
+    );
+    if (userAccounts.length >= 1 && !isSameAccount) {
+      const roleTitle = appUser.role === 'manager' ? 'Manager' : 'User';
+      return `${roleTitle} role can only connect 1 LinkedIn account. Please disconnect or remove your current account before adding a new one.`;
+    }
+  }
+
+  return null;
+}
+
 // ── Add or Update a Test User ───────────────────────────────────────────────
 app.post('/api/users', authenticateToken, requirePermission('linkedin:manage'), async (req, res) => {
-  const { username, password, login_try = 1, status = 'active', meta_data } = req.body;
+  const { username, password, proxy, login_try = 1, status = 'active', meta_data } = req.body;
   if (!username || !password) {
     return res.status(400).json({ success: false, error: 'username and password are required' });
   }
 
   try {
+    const limitError = await validateLinkedInAccountLimits(req.appUser, username);
+    if (limitError) {
+      return res.status(400).json({ success: false, error: limitError });
+    }
+
     await TestUserRepository.upsertUser({
       app_user_id: req.appUser.id,
-      username,
+      username: username.trim(),
       password,
+      proxy: proxy ? String(proxy).trim() : null,
       login_try: Number(login_try),
       status,
       meta_data: meta_data ?? { source: 'api' },
     });
-    const user = await TestUserRepository.getUserByUsername(username);
+    const user = await TestUserRepository.getUserByUsername(username.trim());
     res.json({
       success: true,
       message: `User ${username} saved with login_try = ${String(login_try)}`,
       user: {
         id: user?.id,
         username: user?.username,
+        proxy: user?.proxy,
         login_try: user?.login_try,
         status: user?.status,
       },
@@ -563,6 +612,34 @@ app.patch('/api/users/:userId/login-try', authenticateToken, requirePermission('
 app.put('/api/users/:userId/login-try', authenticateToken, requirePermission('linkedin:manage'), handleUpdateLoginTry);
 app.post('/api/users/:userId/login-try', authenticateToken, requirePermission('linkedin:manage'), handleUpdateLoginTry);
 app.patch('/api/users/:userId', authenticateToken, requirePermission('linkedin:manage'), handleUpdateLoginTry);
+
+// ── Delete / Disconnect a LinkedIn Account ──────────────────────────────────
+const handleDeleteLinkedInUser = async (req, res) => {
+  const userId = parseInt(req.params.userId, 10);
+  if (isNaN(userId)) {
+    return res.status(400).json({ success: false, error: 'Invalid userId parameter' });
+  }
+
+  try {
+    const user = await TestUserRepository.getUserById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, error: 'LinkedIn account not found' });
+    }
+
+    if (req.appUser.role !== 'admin' && user.app_user_id !== req.appUser.id) {
+      return res.status(403).json({ success: false, error: 'Forbidden: You do not own this LinkedIn account.' });
+    }
+
+    await TestUserRepository.deleteUser(userId);
+    res.json({ success: true, message: `LinkedIn account ${user.username} deleted successfully.` });
+  } catch (error) {
+    console.error('[Server] Failed to delete LinkedIn account:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+app.delete('/api/users/:userId', authenticateToken, requirePermission('linkedin:manage'), handleDeleteLinkedInUser);
+app.delete('/api/linkedin/accounts/:userId', authenticateToken, requirePermission('linkedin:manage'), handleDeleteLinkedInUser);
 
 // ── Check Active Session & Auto-Login Status ────────────────────────────────
 app.get('/api/session/check', authenticateToken, async (req, res) => {
@@ -663,6 +740,83 @@ app.post('/api/session/logout', authenticateToken, requirePermission('linkedin:m
   }
 });
 
+// ── Resync Session (Reload & Re-validate using stored cookies) ──────────────
+const handleResyncSession = async (req, res) => {
+  try {
+    const { userId, username } = req.body;
+    let targetUser = null;
+    if (userId) {
+      targetUser = await TestUserRepository.getUserById(parseInt(userId, 10));
+      if (targetUser && req.appUser.role !== 'admin' && targetUser.app_user_id !== req.appUser.id) {
+        return res.status(403).json({ success: false, error: 'Forbidden: You do not own this account.' });
+      }
+    } else if (username) {
+      targetUser = await TestUserRepository.getUserByUsername(username);
+      if (targetUser && req.appUser.role !== 'admin' && targetUser.app_user_id !== req.appUser.id) {
+        return res.status(403).json({ success: false, error: 'Forbidden: You do not own this account.' });
+      }
+    } else {
+      if (req.appUser.role !== 'admin') {
+        targetUser = await TestUserRepository.getActiveSessionUserForAppUser(req.appUser.id);
+      } else {
+        targetUser = await TestUserRepository.getActiveSessionUser();
+      }
+    }
+
+    if (!targetUser || !targetUser.storage_state_json) {
+      return res.status(404).json({
+        success: false,
+        error: 'No saved session cookies found for this user. Please log in first.',
+      });
+    }
+
+    console.log(`[Server] Re-syncing session for ${targetUser.username} using stored cookies...`);
+    sseEmitter.emit('status', { username: targetUser.username, status: 'authenticating', message: 'Validating saved session cookies against LinkedIn feed...' });
+
+    const validation = await MultiUserLoginCronService.validateUserSession(targetUser, {
+      deepCheck: true,
+      headless: true,
+    });
+
+    if (!validation.isValid) {
+      sseEmitter.emit('status', { username: targetUser.username, status: 'failed', message: `Saved session invalid (${validation.reason || 'expired'}).` });
+      return res.status(401).json({
+        success: false,
+        error: `Stored cookies are expired or invalid (${validation.reason || 'session expired'}). Please click Login to re-authenticate.`,
+      });
+    }
+
+    const refreshedUser = await TestUserRepository.getUserById(targetUser.id);
+    const details = await LoggedInDetailsRepository.getDetailsByUserId(targetUser.id);
+    const secrets = await LoggedInDetailsRepository.getSecretTokens(targetUser.id);
+
+    sseEmitter.emit('status', { username: targetUser.username, status: 'success', message: 'Session cookies verified and active!' });
+
+    res.json({
+      success: true,
+      message: `Session for ${targetUser.username} successfully re-synced using cookies!`,
+      user: {
+        id: refreshedUser?.id,
+        username: refreshedUser?.username,
+        status: refreshedUser?.status,
+        last_login_at: refreshedUser?.last_login_at,
+        last_login_status: refreshedUser?.last_login_status,
+        login_count: refreshedUser?.login_count,
+        has_saved_session: true,
+      },
+      session: validation.sessionMeta,
+      totalDetails: details.length,
+      details,
+      secrets,
+    });
+  } catch (error) {
+    console.error('[Server] Session resync error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+};
+
+app.post('/api/session/resync', authenticateToken, requirePermission('linkedin:manage'), handleResyncSession);
+
 // ── Restore Stored Session to Feed ──────────────────────────────────────────
 app.post('/api/session/restore', authenticateToken, requirePermission('linkedin:manage'), async (req, res) => {
   try {
@@ -753,16 +907,21 @@ const handleDirectLogin = async (req, res) => {
     let targetUser;
 
     if (username && password) {
+      const limitError = await validateLinkedInAccountLimits(req.appUser, username);
+      if (limitError) {
+        return res.status(400).json({ success: false, error: limitError });
+      }
+
       // Upsert user into database first with platform app_user_id
       await TestUserRepository.upsertUser({
         app_user_id: req.appUser ? req.appUser.id : null,
-        username,
+        username: username.trim(),
         password,
         login_try: Number(login_try),
         status,
         meta_data: meta_data ?? { source: 'addnewuser_form' },
       });
-      targetUser = await TestUserRepository.getUserByUsername(username);
+      targetUser = await TestUserRepository.getUserByUsername(username.trim());
     } else if (inputUserId) {
       targetUser = await TestUserRepository.getUserById(Number(inputUserId));
     } else if (username) {
@@ -777,10 +936,10 @@ const handleDirectLogin = async (req, res) => {
     }
 
     // Tenant isolation verification: if account belongs to another user, deny access
-    if (req.appUser && req.appUser.role !== 'admin' && targetUser.app_user_id && targetUser.app_user_id !== req.appUser.id) {
-      return res.status(403).json({
+    if (req.appUser && targetUser.app_user_id && Number(targetUser.app_user_id) !== Number(req.appUser.id)) {
+      return res.status(400).json({
         success: false,
-        error: "Forbidden: You cannot access or authenticate another user's LinkedIn account.",
+        error: 'this account is already connect with another account',
       });
     }
 
@@ -882,17 +1041,18 @@ app.post('/api/users/login', authenticateToken, requirePermission('linkedin:mana
 // ── SSE Stream for Real-Time Authentication Status ───────────────────────────
 app.get('/api/login/stream', (req, res) => {
   const { username } = req.query;
-  if (!username) {
-    return res.status(400).end('username query parameter is required');
-  }
 
   res.setHeader('Content-Type', 'text/event-stream');
   res.setHeader('Cache-Control', 'no-cache');
   res.setHeader('Connection', 'keep-alive');
   res.flushHeaders();
 
+  const reqUser = String(username || '').toLowerCase().trim();
+
   const onStatus = (data) => {
-    if (data.username === username) {
+    const dataUser = String(data.username || '').toLowerCase().trim();
+    // Forward if no username specified, or username matches case-insensitively, or matches by userId
+    if (!reqUser || !dataUser || reqUser === dataUser || (data.userId && String(data.userId) === reqUser)) {
       res.write(`data: ${JSON.stringify(data)}\n\n`);
     }
   };
@@ -905,7 +1065,7 @@ app.get('/api/login/stream', (req, res) => {
 });
 
 // ── Check Active 2FA/SMS Challenge ──────────────────────────────────────────
-app.get('/api/login/challenge', authenticateToken, (req, res) => {
+app.get('/api/login/challenge', (req, res) => {
   const username = req.query.username;
   const userId = req.query.userId ? parseInt(req.query.userId, 10) : undefined;
   const challenge = OtpChallengeService.getChallenge(username || userId || '');
@@ -923,7 +1083,7 @@ app.get('/api/login/challenge', authenticateToken, (req, res) => {
 });
 
 // ── Submit OTP from UI ──────────────────────────────────────────────────────
-app.post('/api/login/submit-otp', authenticateToken, (req, res) => {
+app.post('/api/login/submit-otp', (req, res) => {
   const { username, userId, otp } = req.body;
   if (!otp || String(otp).trim().length < 3) {
     return res.status(400).json({ success: false, error: 'Valid OTP code is required' });
@@ -1177,7 +1337,7 @@ app.post('/api/connect/sent-today', authenticateToken, requirePermission('connec
 
 // ── Read LinkedIn Messaging Thread & Last Message ──────────────────────────
 const handleReadThread = async (req, res) => {
-  const threadUrl = (req.body.threadUrl || req.body.threadUrlOrId || req.body.url || '').trim();
+  const threadUrl = (req.body.threadUrl || req.body.threadUrlOrId || req.body.url || req.body.threadId || '').trim();
   const headless = req.body.headless !== undefined ? Boolean(req.body.headless) : true;
 
   if (!threadUrl || !extractThreadId(threadUrl)) {

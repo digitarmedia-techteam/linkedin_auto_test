@@ -65,24 +65,40 @@ class OtpChallengeManager extends EventEmitter {
   /**
    * Retrieves an active challenge by username or userId.
    */
-  getChallenge(usernameOrId: string | number): OtpChallenge | null {
+  getChallenge(usernameOrId?: string | number): OtpChallenge | null {
     if (!usernameOrId && usernameOrId !== 0) {
-      // If only one challenge is active, return it
-      if (this.challenges.size === 1) {
+      if (this.challenges.size >= 1) {
         return this.challenges.values().next().value ?? null;
       }
       return null;
     }
 
-    if (typeof usernameOrId === 'number' || !isNaN(Number(usernameOrId))) {
-      const id = Number(usernameOrId);
+    const key = String(usernameOrId).trim().toLowerCase();
+
+    // 1. Direct key match
+    if (this.challenges.has(key)) {
+      return this.challenges.get(key) || null;
+    }
+
+    // 2. Numeric userId match
+    if (!isNaN(Number(key))) {
+      const id = Number(key);
       for (const c of this.challenges.values()) {
         if (c.userId === id) return c;
       }
     }
 
-    const key = String(usernameOrId).toLowerCase();
-    return this.challenges.get(key) || null;
+    // 3. Username comparison in challenge values
+    for (const c of this.challenges.values()) {
+      if (c.username.toLowerCase().trim() === key) return c;
+    }
+
+    // 4. Fallback if single challenge is waiting
+    if (this.challenges.size === 1) {
+      return this.challenges.values().next().value ?? null;
+    }
+
+    return null;
   }
 
   /**

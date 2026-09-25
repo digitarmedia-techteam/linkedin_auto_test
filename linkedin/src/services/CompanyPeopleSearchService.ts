@@ -249,7 +249,7 @@ export class CompanyPeopleSearchService {
         // Construct LinkedIn Structured Faceted People Search URL
         // LinkedIn uses dedicated faceted parameters: currentCompany, titleFreeText, firstName, lastName, keywords, network
         const urlParams = new URLSearchParams();
-        urlParams.set('origin', 'FACETED_SEARCH');
+        urlParams.set('origin', 'SWITCH_SEARCH_VERTICAL');
         urlParams.set('currentCompany', `["${cleanCompanyId}"]`);
 
         // Use dedicated title facet for position
@@ -287,7 +287,7 @@ export class CompanyPeopleSearchService {
           urlParams.set('page', String(currentPage));
         }
 
-        const searchUrl = `https://www.linkedin.com/search/results/people/?${urlParams.toString()}`;
+        const searchUrl = `https://www.linkedin.com/search/results/people/?${urlParams.toString()}&origin=SWITCH_SEARCH_VERTICAL`;
         logger.info(`[PeopleSearch] Navigating to page ${currentPage}: ${searchUrl}`);
 
         await page.goto(searchUrl, { waitUntil: 'domcontentloaded', timeout: 35_000 });
@@ -310,7 +310,7 @@ export class CompanyPeopleSearchService {
           await page.waitForTimeout(700);
           await page.evaluate(() => window.scrollBy(0, 600));
           await page.waitForTimeout(700);
-        } catch {}
+        } catch { }
 
         // Wait for avatars to render
         try {
@@ -318,7 +318,7 @@ export class CompanyPeopleSearchService {
             '.reusable-search__entity-result-list img, .entity-result img, [data-view-name="search-entity-result-universal-template"] img',
             { timeout: 3_000 },
           );
-        } catch {}
+        } catch { }
 
         // Extract people cards strictly from within the results list container
         const pagePeople = await page.evaluate(
@@ -356,8 +356,8 @@ export class CompanyPeopleSearchService {
               cardElements.length > 0
                 ? (cardElements as HTMLElement[])
                 : (Array.from(resultsRoot.querySelectorAll('a[href*="/in/"]'))
-                    .map(a => a.closest('li') || a.parentElement)
-                    .filter(Boolean) as HTMLElement[]);
+                  .map(a => a.closest('li') || a.parentElement)
+                  .filter(Boolean) as HTMLElement[]);
 
             for (const card of candidateCards) {
               try {
@@ -673,10 +673,10 @@ export class CompanyPeopleSearchService {
     } finally {
       try {
         if (context) await context.close();
-      } catch {}
+      } catch { }
       try {
         if (browser) await browser.close();
-      } catch {}
+      } catch { }
     }
   }
 }

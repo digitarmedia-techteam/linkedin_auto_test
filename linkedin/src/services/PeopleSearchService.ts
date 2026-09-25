@@ -143,7 +143,7 @@ export class PeopleSearchService {
     try {
       const parsed = JSON.parse(input);
       if (Array.isArray(parsed)) return parsed.map((s) => String(s).trim()).filter(Boolean);
-    } catch {}
+    } catch { }
     return String(input)
       .split(',')
       .map((s) => s.trim())
@@ -223,7 +223,7 @@ export class PeopleSearchService {
               const m = str.match(/urn:li:fsd_company:(\d+)/) || str.match(/urn:li:company:(\d+)/);
               if (m && m[1]) return m[1];
             }
-          } catch {}
+          } catch { }
 
           try {
             const res = await fetch(
@@ -237,7 +237,7 @@ export class PeopleSearchService {
                 html.match(/urn:li:company:(\d+)/i);
               if (m && m[1]) return m[1];
             }
-          } catch {}
+          } catch { }
 
           return null;
         }, clean);
@@ -819,6 +819,24 @@ export class PeopleSearchService {
    * Main People Search method supporting multiple country filters, designation, keywords,
    * current companies, and structured output extraction (Person → Company → Designation → Country).
    */
+  /**
+   * Returns true when the query looks like a person's name rather than a job role/keyword.
+   * Heuristic: all tokens are alphabetic (no digits), none are common role words.
+   */
+  private static isNameKeywordSearch(keyword: string): boolean {
+    if (!keyword || !keyword.trim()) return false;
+    const roleWords = new Set([
+      'manager', 'engineer', 'developer', 'analyst', 'director', 'officer', 'lead', 'head',
+      'specialist', 'consultant', 'associate', 'executive', 'president', 'vp', 'ceo', 'cto',
+      'cfo', 'founder', 'co-founder', 'intern', 'coordinator', 'advisor', 'partner',
+      'marketing', 'sales', 'finance', 'product', 'design', 'strategy', 'operations',
+    ]);
+    const tokens = keyword.trim().toLowerCase().split(/\s+/);
+    if (tokens.some((t) => /\d/.test(t))) return false;
+    if (tokens.every((t) => !roleWords.has(t))) return true;
+    return false;
+  }
+
   static async searchPeople(options: PeopleSearchFilterOptions): Promise<PeopleSearchResponse> {
     const { user } = options;
     const headless = options.headless !== false;
@@ -828,6 +846,13 @@ export class PeopleSearchService {
     const cleanKeywords = (options.keywords || '').trim();
     const cleanDesignation = (options.designation || options.title || '').trim();
     const resolvedCountries = this.resolveCountryGeos(options.countries, options.geoUrns);
+
+    // Detect if keywords represent a person name (e.g. "rahul", "john smith")
+    const keywordIsPersonName = cleanKeywords && !cleanDesignation && PeopleSearchService.isNameKeywordSearch(cleanKeywords);
+    // Tokens to match against person name + vanity
+    const nameKeywordTokens = keywordIsPersonName
+      ? cleanKeywords.toLowerCase().split(/\s+/).filter((t) => t.length >= 2)
+      : [];
 
     // Process company input: differentiate numeric Company IDs from text Company Names
     const rawCompany = options.currentCompany || options.companyIds || (options as any).company || '';
@@ -896,7 +921,7 @@ export class PeopleSearchService {
       while (collectedPeople.length < limit && currentPage <= maxPagesToScrape) {
         // Construct LinkedIn Structured Faceted People Search URL matching LinkedIn's native format
         const urlParams = new URLSearchParams();
-        urlParams.set('origin', 'FACETED_SEARCH');
+        urlParams.set('origin', 'GLOBAL_SEARCH_HEADER');
 
         // 1. Numeric Company ID facet (e.g. ["67952029"])
         if (numericCompanyIds.length > 0) {
@@ -975,7 +1000,7 @@ export class PeopleSearchService {
           await page.waitForTimeout(700);
           await page.evaluate(() => window.scrollBy(0, 600));
           await page.waitForTimeout(700);
-        } catch {}
+        } catch { }
 
         // Wait for images to load
         try {
@@ -983,7 +1008,7 @@ export class PeopleSearchService {
             '.reusable-search__entity-result-list img, [data-view-name="search-entity-result-universal-template"] img, .entity-result img, main img',
             { timeout: 3_000 },
           );
-        } catch {}
+        } catch { }
 
         // Extract people cards from DOM with comprehensive Person → Company → Designation → Location structure
         const pagePeople = await page.evaluate(() => {
@@ -1019,8 +1044,8 @@ export class PeopleSearchService {
             cardElements.length > 0
               ? (cardElements as HTMLElement[])
               : (Array.from(resultsRoot.querySelectorAll('a[href*="/in/"]'))
-                  .map((a) => a.closest('li') || a.parentElement)
-                  .filter(Boolean) as HTMLElement[]);
+                .map((a) => a.closest('li') || a.parentElement)
+                .filter(Boolean) as HTMLElement[]);
 
           let cardIndex = 0;
           for (const card of candidateCards) {
@@ -1351,9 +1376,26 @@ export class PeopleSearchService {
           return people;
         });
 
-        // Add to collected results strictly enforcing the company & location filters
+        // Add to collected results strictly enforcing name / company / location filters
         for (const person of pagePeople) {
           if (seenVanity.has(person.vanityName)) continue;
+
+          // 0. NAME KEYWORD FILTER:
+          // If the search keyword looks like a person name (e.g. "rahul"),
+          // only accept profiles whose name OR vanityName contains at least one keyword token.
+          if (nameKeywordTokens.length > 0) {
+            const personNameLower = (person.name || '').toLowerCase();
+            const personVanityLower = (person.vanityName || '').toLowerCase();
+            const nameMatches = nameKeywordTokens.some(
+              (token) => personNameLower.includes(token) || personVanityLower.includes(token),
+            );
+            if (!nameMatches) {
+              logger.info(
+                `[PeopleSearch] Discarded "${person.name}" - name does not match keyword tokens [${nameKeywordTokens.join(', ')}]`,
+              );
+              continue;
+            }
+          }
 
           // 1. COMPANY VALIDATION & REFINEMENT:
           if (numericCompanyIds.length > 0) {
@@ -1501,12 +1543,12 @@ export class PeopleSearchService {
       if (context) {
         try {
           await context.close();
-        } catch {}
+        } catch { }
       }
       if (browser) {
         try {
           await browser.close();
-        } catch {}
+        } catch { }
       }
     }
   }
