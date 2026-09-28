@@ -168,11 +168,20 @@ export class LoginPage {
     const effectiveUser = user || this.currentUser;
 
     if (this.page.url().includes('/feed')) {
-      logger.info('[LoginPage] Already on feed — login successful.');
+      logger.info('[LoginPage] Already on feed — login successful! No verification or OTP search needed.');
       return;
     }
 
     logger.info('[LoginPage] Waiting for post-login destination (feed or checkpoint challenge)...');
+
+    // Priority 1: Fast-check if LinkedIn directly redirects to feed
+    try {
+      await this.page.waitForURL((url) => url.pathname.includes('/feed'), { timeout: 6000 });
+      logger.info('[LoginPage] Redirected directly to feed — login successful! No verification or OTP search needed.');
+      return;
+    } catch {
+      // Not on feed within 6s, proceed to polling check
+    }
 
     // Broad set of challenge and PIN input selectors
     const challengeIndicatorSelector = [
@@ -201,26 +210,46 @@ export class LoginPage {
     while (Date.now() - startTime < 35_000) {
       const currentUrl = this.page.url();
       if (currentUrl.includes('/feed')) {
-        logger.info('[LoginPage] Redirected directly to feed — login successful.');
+        logger.info('[LoginPage] Redirected directly to feed — login successful! No verification or OTP search needed.');
         return;
       }
 
-      const isChallengeUrl =
-        currentUrl.includes('/checkpoint') ||
-        currentUrl.includes('/challenge') ||
-        currentUrl.includes('/uas/consumer-login-submit') ||
-        currentUrl.includes('/checkpoint/lg/login-submit');
+      // Check feed selector visibility directly
+      try {
+        const feedElem = this.page.locator(`${NAV_AVATAR_SELECTOR}, ${FEED_SELECTOR}`).first();
+        if (await feedElem.isVisible({ timeout: 150 })) {
+          logger.info('[LoginPage] Feed UI element detected — login successful! No verification or OTP search needed.');
+          return;
+        }
+      } catch {}
 
-      if (isChallengeUrl) {
+      // ACTUAL challenge URLs only (exclude intermediate form submit endpoints)
+      const isActualChallengeUrl =
+        currentUrl.includes('/checkpoint/challenge') ||
+        currentUrl.includes('/checkpoint/challengesV2') ||
+        currentUrl.includes('/uas/challenge') ||
+        (currentUrl.includes('/challenge/') && !currentUrl.includes('/login-submit'));
+
+      if (isActualChallengeUrl) {
+        if (this.page.url().includes('/feed')) {
+          logger.info('[LoginPage] Feed reached — login successful! No verification needed.');
+          return;
+        }
         detectedChallenge = true;
         break;
       }
 
       try {
-        const challengeCount = await this.page.locator(challengeIndicatorSelector).count();
-        if (challengeCount > 0) {
-          detectedChallenge = true;
-          break;
+        if (!this.page.url().includes('/feed')) {
+          const challengeCount = await this.page.locator(challengeIndicatorSelector).count();
+          if (challengeCount > 0) {
+            if (this.page.url().includes('/feed')) {
+              logger.info('[LoginPage] Feed reached — login successful! No verification needed.');
+              return;
+            }
+            detectedChallenge = true;
+            break;
+          }
         }
 
         // Check for inline error banners (wrong password, account locked, etc.)
@@ -242,8 +271,17 @@ export class LoginPage {
       await this.page.waitForTimeout(600);
     }
 
+    if (this.page.url().includes('/feed')) {
+      logger.info('[LoginPage] Redirected directly to feed — login successful! No verification or OTP search needed.');
+      return;
+    }
+
     if (detectedChallenge) {
       const currentUrl = this.page.url();
+      if (currentUrl.includes('/feed')) {
+        logger.info('[LoginPage] Redirected directly to feed — login successful! No verification or OTP search needed.');
+        return;
+      }
       logger.info(`[LoginPage] Checkpoint/challenge detected at ${currentUrl}. Proceeding to SMS/OTP verification flow...`);
       await this.handleSmsVerification(effectiveUser);
       return;
@@ -413,6 +451,22 @@ export class LoginPage {
     }
     const username = user?.username ?? this.currentUser?.username ?? 'user';
     const userId = user?.id ?? this.currentUser?.id;
+
+    // Check if directly redirected to feed — skip verification and OTP search entirely
+    if (this.page.url().includes('/feed')) {
+      logger.info(`[LoginPage] [${username}] Directly redirected to feed — login successful! No verification or OTP search needed.`);
+      return;
+    }
+
+    // Fast-check feed element visibility
+    try {
+      const feedElem = this.page.locator(`${NAV_AVATAR_SELECTOR}, ${FEED_SELECTOR}`).first();
+      if (await feedElem.isVisible({ timeout: 400 })) {
+        logger.info(`[LoginPage] [${username}] Feed UI confirmed visible — skipping SMS challenge.`);
+        return;
+      }
+    } catch {}
+
     logger.info(`[LoginPage] [${username}] Starting SMS verification handling. Registering OTP challenge immediately...`);
 
     // 10-minute timeout window (600,000 ms) - but triggers submit immediately upon OTP entry
@@ -425,6 +479,10 @@ export class LoginPage {
     ).first();
 
     try {
+      if (this.page.url().includes('/feed')) {
+        logger.info(`[LoginPage] [${username}] Feed reached — skipping try-another-way search.`);
+        return;
+      }
       if (await tryAnotherWay.isVisible({ timeout: 2500 })) {
         logger.info(`[LoginPage] [${username}] Found "Verify using SMS" button. Clicking it now...`);
         await tryAnotherWay.click();
@@ -435,6 +493,12 @@ export class LoginPage {
       }
     } catch (e) {
       logger.warn(`[LoginPage] [${username}] Checking try-another-way: ${(e as Error).message}`);
+    }
+
+    if (this.page.url().includes('/feed')) {
+      logger.info(`[LoginPage] [${username}] Redirected to feed — skipping OTP input search.`);
+      OtpChallengeService.clearChallenge(username);
+      return;
     }
 
     try {
