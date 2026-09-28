@@ -172,8 +172,8 @@ function App() {
   const [appUser, setAppUser] = useState(null);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
-  const [loginEmail, setLoginEmail] = useState('admin@app.com');
-  const [loginPassword, setLoginPassword] = useState('Admin@123');
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
   const [loggingIn, setLoggingIn] = useState(false);
 
   // ── Layout & Navigation ───────────────────────────────────────────────────
@@ -4242,33 +4242,7 @@ function App() {
               <p className="text-xs text-slate-500">Multi-tenant role-based authentication portal.</p>
             </div>
 
-            {/* Quick Demo Sign In Pills */}
-            <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
-              <span className="text-[10px] uppercase font-bold tracking-wider text-slate-500 block">1-Click Demo Logins:</span>
-              <div className="grid grid-cols-3 gap-1.5 text-xs font-semibold">
-                <button
-                  type="button"
-                  onClick={() => { setLoginEmail('admin@app.com'); setLoginPassword('Admin@123'); }}
-                  className="py-1.5 px-2 rounded-xl bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 text-[11px] transition font-bold"
-                >
-                  👑 Admin
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setLoginEmail('manager@app.com'); setLoginPassword('Manager@123'); }}
-                  className="py-1.5 px-2 rounded-xl bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-[11px] transition font-bold"
-                >
-                  👔 Manager
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setLoginEmail('user@app.com'); setLoginPassword('User@123'); }}
-                  className="py-1.5 px-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-[11px] transition font-bold"
-                >
-                  👤 User
-                </button>
-              </div>
-            </div>
+
 
             <form onSubmit={handlePlatformLogin} className="space-y-3.5">
               <div>
