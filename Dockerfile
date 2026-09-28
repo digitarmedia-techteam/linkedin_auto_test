@@ -54,7 +54,7 @@ RUN npx playwright install chromium
 # ---------------------------------------------------------
 # Permissions
 # ---------------------------------------------------------
-RUN mkdir -p /ms-playwright && \
+RUN mkdir -p /app/screenshots /ms-playwright && \
     chown -R appuser:appuser /app /ms-playwright && \
     chmod -R 755 /ms-playwright
 

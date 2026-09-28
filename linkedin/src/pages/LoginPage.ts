@@ -223,19 +223,6 @@ export class LoginPage {
           break;
         }
 
-        // Check if Arkose / CAPTCHA puzzle appeared on remote server
-        const arkoseCount = await this.page.locator('iframe[src*="arkose"], iframe[src*="captcha"], #captcha, div[data-theme="arkose"], .challenge-dialog').count();
-        if (arkoseCount > 0) {
-          const shot = await this.captureDiagnosticScreenshot(`captcha-${effectiveUser?.username || 'user'}`);
-          logger.error(`[LoginPage] Arkose Labs CAPTCHA / bot barrier detected on server IP! Screenshot: ${shot}`);
-          OtpChallengeService.emit('status_update', {
-            username: effectiveUser?.username || 'user',
-            status: 'failed',
-            message: 'LinkedIn bot CAPTCHA detected on server IP. A residential proxy is required on Ubuntu remote servers.',
-          });
-          throw new AuthenticationError('LinkedIn bot CAPTCHA detected on remote server IP. A residential proxy is required for datacenter IPs.');
-        }
-
         // Check for inline error banners (wrong password, account locked, etc.)
         const errorBanner = this.page.locator(
           '#error-for-username, #error-for-password, .alert-content, .form__label--error, div[alert-type="error"], div[data-id="sign-in-form__alert"]'
@@ -249,7 +236,7 @@ export class LoginPage {
           }
         }
       } catch (e) {
-        if ((e as Error).message.includes('CAPTCHA') || (e as Error).message.includes('login failed:')) throw e;
+        if ((e as Error).message.includes('login failed:')) throw e;
       }
 
       await this.page.waitForTimeout(600);
