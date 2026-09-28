@@ -1,4 +1,6 @@
 import type { Page, Locator } from 'playwright';
+import { existsSync, mkdirSync } from 'fs';
+import path from 'path';
 import { logger } from '../utils/logger.js';
 import { NAV_AVATAR_SELECTOR, FEED_SELECTOR } from '../config/constants.js';
 import { AuthenticationError } from '../utils/errors.js';
@@ -30,6 +32,44 @@ export class LoginPage {
   private get submitButton() { return this.page.getByRole('button', { name: 'Sign in' }).last(); }
   private get errorBanner() { return this.page.locator('[role="alert"], .error-message').first(); }
 
+  /** Dismisses any cookie consent or GDPR banner presented on European or remote cloud servers. */
+  async dismissCookieBanner(): Promise<void> {
+    const cookieBtn = this.page.locator([
+      'button[data-control-name="ga-cookie-consent-accept"]',
+      'button:has-text("Accept cookies")',
+      'button:has-text("Accept")',
+      'button:has-text("Agree & Join")',
+      '#artdeco-global-alert-container button',
+      '.cookie-policy button',
+      '.artdeco-global-alert__action button',
+    ].join(', ')).first();
+    try {
+      if (await cookieBtn.isVisible({ timeout: 1000 })) {
+        logger.info('[LoginPage] Cookie/GDPR consent banner detected. Dismissing it...');
+        await cookieBtn.click({ timeout: 1500 }).catch(() => {});
+        await this.page.waitForTimeout(300);
+      }
+    } catch {}
+  }
+
+  /** Captures a full-page diagnostic screenshot to screenshots/ for remote troubleshooting. */
+  async captureDiagnosticScreenshot(label: string): Promise<string | null> {
+    try {
+      const dir = path.join(process.cwd(), 'screenshots');
+      if (!existsSync(dir)) {
+        mkdirSync(dir, { recursive: true });
+      }
+      const filename = `${label}-${Date.now()}.png`;
+      const filepath = path.join(dir, filename);
+      await this.page.screenshot({ path: filepath, fullPage: true });
+      logger.info(`[LoginPage] Diagnostic screenshot captured: ${filepath}`);
+      return filepath;
+    } catch (err) {
+      logger.warn(`[LoginPage] Could not capture screenshot: ${(err as Error).message}`);
+      return null;
+    }
+  }
+
   /** Navigate to the login page. */
   async open(user?: { id?: number; username: string }): Promise<void> {
     if (user) this.currentUser = user;
@@ -38,6 +78,8 @@ export class LoginPage {
       waitUntil: 'domcontentloaded',
       timeout: 60_000,
     });
+
+    await this.dismissCookieBanner();
 
     // Check if already on feed
     if (this.page.url().includes('/feed')) {
@@ -96,6 +138,8 @@ export class LoginPage {
 
     logger.info('[LoginPage] Filling login form.', { username });
 
+    await this.dismissCookieBanner();
+
     await this.usernameInput.click();
     await this.usernameInput.fill(username);
     // Tab out of username to trigger blur/validation and commit React state
@@ -107,7 +151,12 @@ export class LoginPage {
     await this.page.keyboard.press('Tab');
 
     await this.page.waitForTimeout(300);
-    await this.submitButton.click();
+    try {
+      await this.submitButton.click({ timeout: 5000 });
+    } catch {
+      logger.info('[LoginPage] Submit button click timed out, pressing Enter on password field...');
+      await this.passwordInput.press('Enter');
+    }
   }
 
   /**
@@ -173,7 +222,35 @@ export class LoginPage {
           detectedChallenge = true;
           break;
         }
-      } catch {}
+
+        // Check if Arkose / CAPTCHA puzzle appeared on remote server
+        const arkoseCount = await this.page.locator('iframe[src*="arkose"], iframe[src*="captcha"], #captcha, div[data-theme="arkose"], .challenge-dialog').count();
+        if (arkoseCount > 0) {
+          const shot = await this.captureDiagnosticScreenshot(`captcha-${effectiveUser?.username || 'user'}`);
+          logger.error(`[LoginPage] Arkose Labs CAPTCHA / bot barrier detected on server IP! Screenshot: ${shot}`);
+          OtpChallengeService.emit('status_update', {
+            username: effectiveUser?.username || 'user',
+            status: 'failed',
+            message: 'LinkedIn bot CAPTCHA detected on server IP. A residential proxy is required on Ubuntu remote servers.',
+          });
+          throw new AuthenticationError('LinkedIn bot CAPTCHA detected on remote server IP. A residential proxy is required for datacenter IPs.');
+        }
+
+        // Check for inline error banners (wrong password, account locked, etc.)
+        const errorBanner = this.page.locator(
+          '#error-for-username, #error-for-password, .alert-content, .form__label--error, div[alert-type="error"], div[data-id="sign-in-form__alert"]'
+        ).first();
+        if (await errorBanner.isVisible({ timeout: 150 }).catch(() => false)) {
+          const errMsg = (await errorBanner.innerText().catch(() => '')).trim();
+          if (errMsg) {
+            const shot = await this.captureDiagnosticScreenshot(`login-error-${effectiveUser?.username || 'user'}`);
+            logger.error(`[LoginPage] Login error on page: "${errMsg}". Screenshot: ${shot}`);
+            throw new AuthenticationError(`LinkedIn login failed: ${errMsg}`);
+          }
+        }
+      } catch (e) {
+        if ((e as Error).message.includes('CAPTCHA') || (e as Error).message.includes('login failed:')) throw e;
+      }
 
       await this.page.waitForTimeout(600);
     }
@@ -191,11 +268,13 @@ export class LoginPage {
         .locator(`${NAV_AVATAR_SELECTOR}, ${FEED_SELECTOR}`)
         .first()
         .waitFor({ state: 'visible', timeout: 10_000 });
-    } catch {
+    } catch (err) {
+      if ((err as Error).message.includes('CAPTCHA')) throw err;
+      const shot = await this.captureDiagnosticScreenshot(`login-timeout-${effectiveUser?.username || 'user'}`);
+      const currentUrl = this.page.url();
+      logger.error(`[LoginPage] Post-login wait failed (URL: ${currentUrl}). Screenshot saved to: ${shot}`);
       throw new AuthenticationError(
-        'Login did not complete within the expected timeout. ' +
-          'A CAPTCHA or security challenge may have appeared. ' +
-          'Complete the challenge manually and re-run the test.',
+        `Login did not complete within expected timeout (URL: ${currentUrl}). Screenshot saved to ${shot || 'screenshots/'}. If running on an Ubuntu cloud server, a residential proxy is required to avoid LinkedIn bot blocks.`,
       );
     }
   }

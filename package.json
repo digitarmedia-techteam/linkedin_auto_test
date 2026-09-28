@@ -8,8 +8,9 @@
     "node": ">=18.0.0"
   },
   "scripts": {
-    "start": "tsx server.js",
-    "dev": "tsx watch server.js",
+    "start": "npx tsx server.js",
+    "dev": "npx tsx watch server.js",
+    "serve": "node --import tsx server.js",
     "check": "node --check server.js"
   },
   "dependencies": {

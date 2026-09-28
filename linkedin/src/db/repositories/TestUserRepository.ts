@@ -246,6 +246,7 @@ export const TestUserRepository = {
     storage_state_json?: string | null;
     meta_data?: Record<string, unknown>;
     user_agent?: string | null;
+    proxy?: string | null;
   }): Promise<void> {
     const pool = getDbPool();
     const appUserId = user.app_user_id ?? null;

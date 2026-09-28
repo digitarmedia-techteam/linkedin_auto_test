@@ -33,6 +33,46 @@ export interface CronExecutionResult {
 
 const SECRET_COOKIE_NAMES = ['li_at', 'JSESSIONID', 'bcookie', 'bscookie', 'liap', 'li_rm', 'dfpfpt'];
 
+export const CHROMIUM_STEALTH_ARGS = [
+  '--no-sandbox',
+  '--disable-setuid-sandbox',
+  '--disable-blink-features=AutomationControlled',
+  '--disable-infobars',
+  '--window-size=1280,800',
+  '--disable-dev-shm-usage',
+  '--no-first-run',
+  '--no-zygote',
+];
+
+export const DEFAULT_DESKTOP_UA =
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36';
+
+export function parseProxy(proxyStr?: string | null): { server: string; username?: string; password?: string } | undefined {
+  if (!proxyStr || !proxyStr.trim()) return undefined;
+  const raw = proxyStr.trim();
+
+  // Pattern: host:port:username:password
+  const parts = raw.split(':');
+  if (parts.length === 4 && !raw.includes('@') && !raw.startsWith('http')) {
+    const [host, port, user, pass] = parts;
+    return {
+      server: `http://${host}:${port}`,
+      username: user,
+      password: pass,
+    };
+  }
+
+  try {
+    const url = new URL(raw.startsWith('http://') || raw.startsWith('https://') || raw.startsWith('socks5://') ? raw : `http://${raw}`);
+    const server = `${url.protocol}//${url.hostname}:${url.port || (url.protocol === 'https:' ? '443' : '80')}`;
+    const username = url.username ? decodeURIComponent(url.username) : undefined;
+    const password = url.password ? decodeURIComponent(url.password) : undefined;
+    return { server, username, password };
+  } catch {
+    return { server: raw };
+  }
+}
+
 export const MultiUserLoginCronService = {
   /**
    * Executes the cron login task for all active test users where login_try = 1.
@@ -73,8 +113,8 @@ export const MultiUserLoginCronService = {
     logger.info(`[CronService] Found ${String(users.length)} target user(s) with login_try = 1 to authenticate`);
 
     const browser = await chromium.launch({
-      headless: config.headless,
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      headless: true,
+      args: CHROMIUM_STEALTH_ARGS,
     });
 
     const results: UserCronResult[] = [];
@@ -124,12 +164,14 @@ export const MultiUserLoginCronService = {
     await TestUserRepository.initTable();
     await LoggedInDetailsRepository.initTable();
 
-    const isHeadless = options?.headless !== undefined ? options.headless : config.headless;
-    logger.info(`[CronService] Launching browser for direct login (headless = ${String(isHeadless)})`);
+    const isHeadless = options?.headless !== undefined ? options.headless : true;
+    const proxyConfig = parseProxy(user.proxy || process.env.PROXY_SERVER);
+    logger.info(`[CronService] Launching browser for direct login (headless = ${String(isHeadless)}, proxy = ${proxyConfig ? proxyConfig.server : 'direct'})`);
 
     const browser = await chromium.launch({
       headless: isHeadless,
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      args: CHROMIUM_STEALTH_ARGS,
+      ...(proxyConfig ? { proxy: proxyConfig } : {}),
     });
 
     try {
@@ -160,10 +202,32 @@ export const MultiUserLoginCronService = {
     options?: { forceFresh?: boolean },
   ): Promise<UserCronResult> {
     // Isolated environment for this user
+    const userAgent = (user.user_agent && !user.user_agent.includes('Headless'))
+      ? user.user_agent
+      : DEFAULT_DESKTOP_UA;
+    const proxyConfig = parseProxy(user.proxy || process.env.PROXY_SERVER);
+
     const context = await browser.newContext({
       baseURL: config.baseUrl,
-      userAgent: user.user_agent ?? undefined,
+      userAgent,
       viewport: { width: 1280, height: 800 },
+      deviceScaleFactor: 1,
+      locale: 'en-US',
+      timezoneId: 'America/New_York',
+      ...(proxyConfig ? { proxy: proxyConfig } : {}),
+    });
+
+    // Mask automation on Linux / Ubuntu
+    await context.addInitScript(() => {
+      Object.defineProperty(navigator, 'webdriver', {
+        get: () => undefined,
+      });
+      Object.defineProperty(navigator, 'plugins', {
+        get: () => [1, 2, 3, 4, 5],
+      });
+      Object.defineProperty(navigator, 'languages', {
+        get: () => ['en-US', 'en'],
+      });
     });
 
     const page = await context.newPage();
@@ -485,15 +549,25 @@ export const MultiUserLoginCronService = {
 
     // Deep check: launch lightweight headless context to confirm feed redirect
     logger.info(`[CronService] [User ${String(user.id)}] Performing deep session validation on LinkedIn feed...`);
+    const proxyConfig = parseProxy(user.proxy || process.env.PROXY_SERVER);
     const browser = await chromium.launch({
       headless: options?.headless !== undefined ? options.headless : true,
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      args: CHROMIUM_STEALTH_ARGS,
+      ...(proxyConfig ? { proxy: proxyConfig } : {}),
     });
 
     try {
+      const userAgent = (user.user_agent && !user.user_agent.includes('Headless'))
+        ? user.user_agent
+        : DEFAULT_DESKTOP_UA;
       const context = await browser.newContext({
         baseURL: config.baseUrl,
-        userAgent: user.user_agent ?? undefined,
+        userAgent,
+        viewport: { width: 1280, height: 800 },
+        ...(proxyConfig ? { proxy: proxyConfig } : {}),
+      });
+      await context.addInitScript(() => {
+        Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
       });
       await context.addCookies(cookies);
 

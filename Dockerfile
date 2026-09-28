@@ -1,6 +1,6 @@
 FROM node:20-bookworm-slim
 
-# Set environment variables
+# Environment
 ENV NODE_ENV=production \
     PORT=3011 \
     PLAYWRIGHT_BROWSERS_PATH=/ms-playwright \
@@ -8,40 +8,63 @@ ENV NODE_ENV=production \
 
 WORKDIR /app
 
-# Install system dependencies required by Playwright and Chromium
+# ---------------------------------------------------------
+# System dependencies required by Playwright / Chromium
+# ---------------------------------------------------------
 RUN apt-get update && apt-get install -y --no-install-recommends \
     wget \
     gnupg \
     ca-certificates \
     curl \
+    libnss3 \
+    libnspr4 \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
+    libcups2 \
+    libdrm2 \
+    libxkbcommon0 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxfixes3 \
+    libxrandr2 \
+    libgbm1 \
+    libasound2 \
+    xvfb \
+    fonts-liberation \
     && rm -rf /var/lib/apt/lists/*
 
-# Create non-root application user and group with UID/GID 1001
+# ---------------------------------------------------------
+# Non-root application user
+# ---------------------------------------------------------
 RUN groupadd -g 1001 appuser && \
     useradd -u 1001 -g appuser -m -s /bin/bash appuser
 
-# Copy package manifests
+# ---------------------------------------------------------
+# Install Node dependencies
+# ---------------------------------------------------------
 COPY package*.json ./
 
-# Install application dependencies
 RUN npm ci || npm install
 
-# Install Playwright Chromium browser binary and its system libraries
-RUN npx playwright install --with-deps chromium
+# ---------------------------------------------------------
+# Install Playwright Chromium INSIDE Docker
+# ---------------------------------------------------------
+RUN npx playwright install chromium
 
-# Create browser directory and grant appropriate permissions for UID 1001
-RUN mkdir -p /ms-playwright \
-    && chown -R appuser:appuser /app /ms-playwright \
-    && chmod -R 755 /ms-playwright
+# ---------------------------------------------------------
+# Permissions
+# ---------------------------------------------------------
+RUN mkdir -p /ms-playwright && \
+    chown -R appuser:appuser /app /ms-playwright && \
+    chmod -R 755 /ms-playwright
 
-# Copy project source code
+# ---------------------------------------------------------
+# Application
+# ---------------------------------------------------------
 COPY --chown=appuser:appuser . .
 
-# Switch to non-root user (UID 1001)
 USER 1001
 
-# Expose target service port
 EXPOSE 3011
 
-# Start LinkedIn automation server
 CMD ["npm", "start"]

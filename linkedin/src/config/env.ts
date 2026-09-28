@@ -61,10 +61,10 @@ function buildConfig(): AppConfig {
     networkingAdapter: parseAdapter(process.env['NETWORKING_ADAPTER']),
     db: {
       host: process.env['DB_HOST'] ?? '127.0.0.1',
-      port: parsePositiveInt(process.env['DB_PORT'], 3306),
+      port: parsePositiveInt(process.env['DB_PORT'], 3307),
       database: process.env['DB_NAME'] ?? 'linkedin_db',
-      user: process.env['DB_USER'] ?? 'root',
-      password: process.env['DB_PASSWORD'] ?? '',
+      user: process.env['DB_USER'] ?? 'linkedinuser',
+      password: process.env['DB_PASSWORD'] ?? 'NAIYQfj-S-]KX(PE',
     },
   };
 }

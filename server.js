@@ -43,6 +43,7 @@ app.use(express.static(path.join(__dirname, 'public'), {
     res.setHeader('Expires', '0');
   }
 }));
+app.use('/screenshots', express.static(path.join(__dirname, 'screenshots')));
 
 // Initialize database tables on server startup
 AppUserRepository.initTables().catch((err) => {
@@ -897,6 +898,8 @@ const handleDirectLogin = async (req, res) => {
     meta_data,
     forceFresh = true,
     headless,
+    proxy,
+    user_agent,
   } = req.body;
 
   // Set generous socket timeouts for 10-minute 2FA OTP flow
@@ -919,6 +922,8 @@ const handleDirectLogin = async (req, res) => {
         password,
         login_try: Number(login_try),
         status,
+        proxy: proxy ? String(proxy).trim() : null,
+        user_agent: user_agent ? String(user_agent).trim() : null,
         meta_data: meta_data ?? { source: 'addnewuser_form' },
       });
       targetUser = await TestUserRepository.getUserByUsername(username.trim());
@@ -926,6 +931,10 @@ const handleDirectLogin = async (req, res) => {
       targetUser = await TestUserRepository.getUserById(Number(inputUserId));
     } else if (username) {
       targetUser = await TestUserRepository.getUserByUsername(username);
+    }
+
+    if (targetUser && proxy) {
+      targetUser.proxy = String(proxy).trim();
     }
 
     if (!targetUser) {
@@ -949,7 +958,7 @@ const handleDirectLogin = async (req, res) => {
       sseEmitter.emit('status', { username: targetUser.username, status: 'authenticating', message: 'Checking existing saved session...' });
       const validation = await MultiUserLoginCronService.validateUserSession(targetUser, {
         deepCheck: true,
-        headless: headless !== undefined ? Boolean(headless) : undefined,
+        headless: headless !== undefined ? Boolean(headless) : true,
       });
 
       if (validation.isValid) {
@@ -991,7 +1000,7 @@ const handleDirectLogin = async (req, res) => {
 
     // Run Playwright authentication and detail capture
     const { userResult, details, secrets } = await MultiUserLoginCronService.loginAndCaptureUser(targetUser, {
-      headless: headless !== undefined ? Boolean(headless) : undefined,
+      headless: headless !== undefined ? Boolean(headless) : true,
       forceFresh: Boolean(forceFresh),
     });
 
