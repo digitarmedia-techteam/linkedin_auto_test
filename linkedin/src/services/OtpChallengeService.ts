@@ -21,11 +21,19 @@ class OtpChallengeManager extends EventEmitter {
   /**
    * Called by the automation script (Playwright) when an SMS challenge is detected.
    * Returns a promise that resolves when the user submits their OTP from the web UI.
-   * Default timeout: 3 minutes (180_000 ms).
+   * Default timeout: 10 minutes (600_000 ms).
    */
-  requestOtp(username: string, userId?: number, timeoutMs = 180_000): Promise<string> {
-    const key = username.toLowerCase();
+  requestOtp(username: string, userId?: number, timeoutMs = 600_000): Promise<string> {
+    const key = username.toLowerCase().trim();
     logger.info(`[OtpChallengeService] Registering pending SMS OTP challenge for ${username} (timeout: ${timeoutMs / 1000}s)`);
+
+    // Clean up expired or already completed challenges to avoid stale map entries
+    const now = Date.now();
+    for (const [existingKey, existingChallenge] of this.challenges.entries()) {
+      if (existingChallenge.status !== 'waiting_for_otp' || existingChallenge.expiresAt <= now) {
+        this.challenges.delete(existingKey);
+      }
+    }
 
     return new Promise<string>((resolve, reject) => {
       const timer = setTimeout(() => {
@@ -35,18 +43,18 @@ class OtpChallengeManager extends EventEmitter {
             item.status = 'expired';
           }
           logger.warn(`[OtpChallengeService] OTP challenge timed out for ${username} after ${timeoutMs / 1000}s`);
-          reject(new Error('SMS OTP input timed out after 3 minutes (180 seconds). Please re-run login.'));
+          reject(new Error('SMS OTP input timed out after 10 minutes (600 seconds). Please re-run login.'));
           this.challenges.delete(key);
         }
       }, timeoutMs);
 
-      const now = Date.now();
+      const requestedAt = Date.now();
       const challengeObj: OtpChallenge = {
         userId,
         username,
         status: 'waiting_for_otp',
-        requestedAt: now,
-        expiresAt: now + timeoutMs,
+        requestedAt,
+        expiresAt: requestedAt + timeoutMs,
         resolve: (otp: string) => {
           clearTimeout(timer);
           resolve(otp);
@@ -58,7 +66,7 @@ class OtpChallengeManager extends EventEmitter {
       };
 
       this.challenges.set(key, challengeObj);
-      this.emit('status_update', { username, status: 'otp_required' });
+      this.emit('status_update', { username, userId, status: 'otp_required' });
     });
   }
 
@@ -98,6 +106,13 @@ class OtpChallengeManager extends EventEmitter {
       return this.challenges.values().next().value ?? null;
     }
 
+    // 5. Fallback: find any active challenge waiting for OTP
+    for (const c of this.challenges.values()) {
+      if (c.status === 'waiting_for_otp') {
+        return c;
+      }
+    }
+
     return null;
   }
 
@@ -106,8 +121,14 @@ class OtpChallengeManager extends EventEmitter {
    */
   submitOtp(usernameOrId: string | number, otp: string): boolean {
     let challenge = this.getChallenge(usernameOrId);
-    if (!challenge && this.challenges.size === 1) {
-      challenge = this.challenges.values().next().value ?? null;
+    if (!challenge) {
+      // Find ANY challenge waiting for OTP
+      for (const c of this.challenges.values()) {
+        if (c.status === 'waiting_for_otp' && c.resolve) {
+          challenge = c;
+          break;
+        }
+      }
     }
 
     if (!challenge || challenge.status !== 'waiting_for_otp' || !challenge.resolve) {
@@ -115,7 +136,7 @@ class OtpChallengeManager extends EventEmitter {
       return false;
     }
 
-    logger.info(`[OtpChallengeService] Submitting received OTP for ${challenge.username} to Playwright runner`);
+    logger.info(`[OtpChallengeService] Submitting received OTP (${otp}) for ${challenge.username} directly to Playwright runner`);
     challenge.status = 'otp_received';
     this.emit('status_update', { username: challenge.username, status: 'authenticating', message: 'Verifying OTP...' });
     challenge.resolve(otp.trim());
@@ -126,7 +147,7 @@ class OtpChallengeManager extends EventEmitter {
    * Cleans up any challenge record.
    */
   clearChallenge(username: string): void {
-    this.challenges.delete(username.toLowerCase());
+    this.challenges.delete(username.toLowerCase().trim());
   }
 }
 

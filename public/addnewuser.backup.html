@@ -1820,7 +1820,7 @@
       <h3 class="modal-title">LinkedIn SMS Verification</h3>
       <p class="modal-subtitle">
         LinkedIn has requested SMS verification for <strong id="otpUsernameLabel">your account</strong>.<br>
-        Please enter the <strong>6-digit verification code</strong> sent to your phone (valid for 3 minutes):
+        Please enter the <strong>6-digit verification code</strong> sent to your phone (valid for 10 minutes):
       </p>
 
       <div class="otp-inputs-group" id="otpDigitsContainer">
@@ -6547,12 +6547,12 @@
       otpModal.style.display = 'flex';
       setTimeout(() => otpDigits[0]?.focus(), 150);
 
-      // Start 3-minute (180 seconds) countdown
+      // Start 10-minute (600 seconds) countdown
       if (otpTimerInterval) clearInterval(otpTimerInterval);
-      let secondsLeft = 180;
+      let secondsLeft = 600;
       if (expiresAt && typeof expiresAt === 'number') {
         const diff = Math.round((expiresAt - Date.now()) / 1000);
-        if (diff > 0 && diff <= 300) {
+        if (diff > 0 && diff <= 660) {
           secondsLeft = diff;
         }
       }
@@ -6570,7 +6570,7 @@
         if (secondsLeft <= 0) {
           clearInterval(otpTimerInterval);
           if (countdownEl) countdownEl.textContent = '00:00';
-          showOtpError('3 minutes elapsed. The OTP verification window has timed out.');
+          showOtpError('10 minutes elapsed. The OTP verification window has timed out.');
           btnSubmitOtp.disabled = true;
           return;
         }

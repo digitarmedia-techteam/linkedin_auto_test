@@ -899,9 +899,9 @@ const handleDirectLogin = async (req, res) => {
     headless,
   } = req.body;
 
-  // Set generous socket timeouts for 3-minute 2FA OTP flow
-  req.setTimeout(360000);
-  res.setTimeout(360000);
+  // Set generous socket timeouts for 10-minute 2FA OTP flow
+  req.setTimeout(660000);
+  res.setTimeout(660000);
 
   try {
     let targetUser;

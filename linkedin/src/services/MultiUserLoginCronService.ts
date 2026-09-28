@@ -167,8 +167,8 @@ export const MultiUserLoginCronService = {
     });
 
     const page = await context.newPage();
-    page.setDefaultTimeout(240_000); // 4 minutes to allow 3-minute OTP entry
-    page.setDefaultNavigationTimeout(240_000);
+    page.setDefaultTimeout(660_000); // 11 minutes to allow 10-minute OTP entry
+    page.setDefaultNavigationTimeout(660_000);
     const loginPage = new LoginPage(page);
     const feedPage = new FeedPage(page);
 

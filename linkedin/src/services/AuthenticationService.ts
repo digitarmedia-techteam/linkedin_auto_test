@@ -92,7 +92,7 @@ export class AuthenticationService {
 
     // 3. Perform fresh login flow using user credentials
     try {
-      await this.login(user.username, user.password);
+      await this.login(user.username, user.password, user);
 
       // 4. Extract storage state and persist into MySQL linkedin_test_users
       const storageState = await this.context.storageState();
@@ -302,7 +302,7 @@ export class AuthenticationService {
   /**
    * Perform a full UI login flow using specified credentials (or fallback to env).
    */
-  async login(username?: string, password?: string): Promise<void> {
+  async login(username?: string, password?: string, targetUser?: { id?: number; username: string }): Promise<void> {
     await this.pageReady;
     const loginUser = username ?? config.username;
     const loginPass = password ?? config.password;
@@ -311,10 +311,11 @@ export class AuthenticationService {
       throw new AuthenticationError('No login credentials provided. Please specify username and password.');
     }
 
+    const userObj = targetUser ?? { username: loginUser };
     logger.info('[AuthService] Starting login flow.', { username: loginUser });
-    await this.loginPage.open();
-    await this.loginPage.login(loginUser, loginPass);
-    await this.loginPage.waitForSuccessfulLogin();
+    await this.loginPage.open(userObj);
+    await this.loginPage.login(loginUser, loginPass, userObj);
+    await this.loginPage.waitForSuccessfulLogin(userObj);
     logger.info('[AuthService] Login completed successfully.', { username: loginUser });
   }
 

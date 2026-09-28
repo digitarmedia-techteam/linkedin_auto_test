@@ -741,7 +741,11 @@ function App() {
     try {
       const res = await apiFetch('/api/login/submit-otp', {
         method: 'POST',
-        body: JSON.stringify({ username: targetUser, otp: otpCode.trim() })
+        body: JSON.stringify({
+          username: targetUser,
+          userId: currentAccount?.id || loggingInAccountId,
+          otp: otpCode.trim()
+        })
       });
       if (res.success) {
         showToast('Verification PIN accepted! Capturing session state...', 'success');

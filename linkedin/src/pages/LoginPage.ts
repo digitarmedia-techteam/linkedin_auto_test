@@ -1,4 +1,4 @@
-import type { Page } from 'playwright';
+import type { Page, Locator } from 'playwright';
 import { logger } from '../utils/logger.js';
 import { NAV_AVATAR_SELECTOR, FEED_SELECTOR } from '../config/constants.js';
 import { AuthenticationError } from '../utils/errors.js';
@@ -13,6 +13,8 @@ import { OtpChallengeService } from '../services/OtpChallengeService.js';
  * timeout — manual intervention is required.
  */
 export class LoginPage {
+  currentUser?: { id?: number; username: string };
+
   constructor(private readonly page: Page) {}
 
   // ── Locators ──────────────────────────────────────────────────────────────
@@ -30,6 +32,7 @@ export class LoginPage {
 
   /** Navigate to the login page. */
   async open(user?: { id?: number; username: string }): Promise<void> {
+    if (user) this.currentUser = user;
     logger.info('[LoginPage] Navigating to login page.');
     await this.page.goto('/login', {
       waitUntil: 'domcontentloaded',
@@ -79,7 +82,13 @@ export class LoginPage {
    * Fill username and password fields and submit.
    * Password is accepted as a parameter but is NEVER logged.
    */
-  async login(username: string, password: string): Promise<void> {
+  async login(username: string, password: string, user?: { id?: number; username: string }): Promise<void> {
+    if (user) {
+      this.currentUser = user;
+    } else if (!this.currentUser) {
+      this.currentUser = { username };
+    }
+
     if (this.page.url().includes('/feed')) {
       logger.info('[LoginPage] Already authenticated on feed — skipping form submission.');
       return;
@@ -102,14 +111,13 @@ export class LoginPage {
   }
 
   /**
-   * Wait until the application shows a post-login indicator.
-   * Throws AuthenticationError on timeout.
-   */
-  /**
    * Wait until the application shows a post-login indicator or handles a 2FA challenge.
    * Throws AuthenticationError on timeout.
    */
   async waitForSuccessfulLogin(user?: { id?: number; username: string }): Promise<void> {
+    if (user) this.currentUser = user;
+    const effectiveUser = user || this.currentUser;
+
     if (this.page.url().includes('/feed')) {
       logger.info('[LoginPage] Already on feed — login successful.');
       return;
@@ -173,7 +181,7 @@ export class LoginPage {
     if (detectedChallenge) {
       const currentUrl = this.page.url();
       logger.info(`[LoginPage] Checkpoint/challenge detected at ${currentUrl}. Proceeding to SMS/OTP verification flow...`);
-      await this.handleSmsVerification(user);
+      await this.handleSmsVerification(effectiveUser);
       return;
     }
 
@@ -193,19 +201,157 @@ export class LoginPage {
   }
 
   /**
+   * Directly locates the visible OTP / PIN input element on LinkedIn's challenge screen.
+   * Checks both main page and iframes across all known LinkedIn PIN selectors.
+   */
+  async findOtpPinInput(timeoutMs = 6000): Promise<Locator | null> {
+    const PIN_SELECTORS = [
+      'input:visible#input__phone_verification_pin',
+      'input:visible#input__email_verification_pin',
+      'input:visible#two-step-verification-code',
+      'input:visible[name="pin"]',
+      'input:visible[name="verificationCode"]',
+      'input:visible[name="code"]',
+      'input:visible[name="security-code"]',
+      'input:visible#security-code',
+      'input:visible[id*="pin" i]',
+      'input:visible[id*="otp" i]',
+      'input:visible[id*="code" i]',
+      'input:visible[id*="verification" i]',
+      'input:visible[type="tel"]',
+      'input:visible[inputmode="numeric"]',
+      'input:visible[autocomplete*="code"]',
+      'input:visible[placeholder*="code" i]',
+      'input:visible[placeholder*="pin" i]',
+      'input:visible[aria-label*="code" i]',
+      'input:visible[aria-label*="pin" i]',
+      'input:visible[aria-label*="SMS" i]',
+      'input:visible[aria-label*="verification" i]',
+      'input:visible.form__input--text',
+      'input:visible[type="text"]:not([name="resendUrl"]):not(#input-resend-pin-url):not([type="hidden"])',
+    ];
+
+    const startTime = Date.now();
+    while (Date.now() - startTime < timeoutMs) {
+      // 1. Direct combined selector on main page
+      const primary = this.page.locator(PIN_SELECTORS.join(', ')).first();
+      try {
+        if (await primary.isVisible({ timeout: 250 })) {
+          return primary;
+        }
+      } catch {}
+
+      // 2. Generic visible text/tel/number input excluding buttons/hidden
+      try {
+        const generic = this.page
+          .locator('input:visible')
+          .filter({
+            hasNot: this.page.locator('[type="hidden"], [type="submit"], [type="button"], [type="checkbox"], [name="resendUrl"], #input-resend-pin-url'),
+          })
+          .first();
+        if (await generic.isVisible({ timeout: 250 })) {
+          return generic;
+        }
+      } catch {}
+
+      // 3. Search within iframes (if LinkedIn renders challenge inside an iframe)
+      for (const frame of this.page.frames()) {
+        if (frame === this.page.mainFrame()) continue;
+        try {
+          const frameInput = frame.locator(PIN_SELECTORS.join(', ')).first();
+          if (await frameInput.isVisible({ timeout: 200 })) {
+            return frameInput;
+          }
+        } catch {}
+      }
+
+      await this.page.waitForTimeout(250);
+    }
+
+    return null;
+  }
+
+  /**
+   * Directly locates the submit/verify button for the OTP challenge.
+   */
+  async findOtpSubmitButton(): Promise<Locator | null> {
+    const SUBMIT_SELECTORS = [
+      'button:visible#two-step-submit-button',
+      '#two-step-submit-button:visible',
+      'button:visible[type="submit"]',
+      'button[type="submit"]:visible',
+      '.form__action button[type="submit"]:visible',
+      'button:visible:has-text("Submit")',
+      'button:visible:has-text("Verify")',
+      'button:visible:has-text("Continue")',
+      'button.form__submit:visible',
+      'input:visible[type="submit"]',
+    ];
+
+    const mainBtn = this.page.locator(SUBMIT_SELECTORS.join(', ')).first();
+    try {
+      if (await mainBtn.isVisible({ timeout: 500 })) {
+        return mainBtn;
+      }
+    } catch {}
+
+    // Check frames
+    for (const frame of this.page.frames()) {
+      if (frame === this.page.mainFrame()) continue;
+      try {
+        const frameBtn = frame.locator(SUBMIT_SELECTORS.join(', ')).first();
+        if (await frameBtn.isVisible({ timeout: 200 })) {
+          return frameBtn;
+        }
+      } catch {}
+    }
+
+    return null;
+  }
+
+  /**
+   * Triggers the submit action directly after OTP is entered.
+   * Tries clicking the submit button first, and also presses Enter on the PIN input.
+   */
+  async triggerOtpSubmit(pinInput: Locator, username: string): Promise<void> {
+    const submitButton = await this.findOtpSubmitButton();
+    if (submitButton) {
+      try {
+        logger.info(`[LoginPage] [${username}] Directly clicking challenge submit button...`);
+        await submitButton.click({ timeout: 4000 });
+        return;
+      } catch (err) {
+        logger.warn(`[LoginPage] [${username}] Click on submit button threw: ${(err as Error).message}. Falling back to Enter key.`);
+      }
+    }
+
+    logger.info(`[LoginPage] [${username}] Directly pressing Enter on PIN input to submit...`);
+    try {
+      await pinInput.press('Enter');
+    } catch (err) {
+      logger.warn(`[LoginPage] [${username}] Enter key press threw: ${(err as Error).message}`);
+    }
+  }
+
+  /**
    * Handles the LinkedIn SMS 2-step verification challenge.
    * 1. Finds and clicks <a id="try-another-way">Verify using SMS</a> if present.
-   * 2. Prompts the UI for the 6-digit OTP code.
-   * 3. Inputs the OTP into the verification code field.
-   * 4. Clicks <button id="two-step-submit-button">Submit</button>.
+   * 2. If not found or already on SMS challenge screen, directly finds input section of OTP.
+   * 3. Waits up to 10 minutes for OTP.
+   * 4. As soon as user enters OTP, immediately fills input and triggers submit directly without waiting for default timeout.
    * 5. Waits for redirect to /feed/.
    */
   async handleSmsVerification(user?: { id?: number; username: string }): Promise<void> {
-    const username = user?.username ?? 'user';
+    if (user) {
+      this.currentUser = user;
+    }
+    const username = user?.username ?? this.currentUser?.username ?? 'user';
+    const userId = user?.id ?? this.currentUser?.id;
     logger.info(`[LoginPage] [${username}] Starting SMS verification handling. Registering OTP challenge immediately...`);
 
-    // Register OTP challenge IMMEDIATELY so the web UI detects waiting_for_otp without any delay
-    const otpPromise = OtpChallengeService.requestOtp(username, user?.id, 180_000);
+    // 10-minute timeout window (600,000 ms) - but triggers submit immediately upon OTP entry
+    const OTP_TIMEOUT_MS = 600_000;
+    const otpPromise = OtpChallengeService.requestOtp(username, userId, OTP_TIMEOUT_MS);
 
     // Look for "Verify using SMS" button / link if presented
     const tryAnotherWay = this.page.locator(
@@ -226,76 +372,101 @@ export class LoginPage {
     }
 
     try {
-      // Step 3: Locate the visible PIN input on the page
-      // Explicitly require :visible and exclude hidden inputs like [name="resendUrl"] (#input-resend-pin-url)
-      let pinInput = this.page.locator([
-        'input:visible#input__phone_verification_pin',
-        'input:visible#input__email_verification_pin',
-        'input:visible#two-step-verification-code',
-        'input:visible[name="pin"]',
-        'input:visible[name="verificationCode"]',
-        'input:visible[name="code"]',
-        'input:visible[type="tel"]',
-        'input:visible[inputmode="numeric"]',
-        'input:visible[autocomplete*="code"]',
-        'input:visible[placeholder*="code" i]',
-        'input:visible[placeholder*="pin" i]',
-        'input:visible[aria-label*="code" i]',
-        'input:visible[aria-label*="pin" i]',
-        'input:visible[aria-label*="SMS" i]',
-        'input:visible.form__input--text',
-        'input:visible[type="text"]:not([name="resendUrl"]):not(#input-resend-pin-url)'
-      ].join(', ')).first();
-
-      try {
-        await pinInput.waitFor({ state: 'visible', timeout: 20_000 });
-        logger.info(`[LoginPage] [${username}] Visible PIN input located.`);
-      } catch {
-        logger.warn(`[LoginPage] [${username}] Specific PIN selectors not yet visible. Searching for any visible text/tel input...`);
-        pinInput = this.page
-          .locator('input:visible')
-          .filter({
-            hasNot: this.page.locator('[type="hidden"], [type="submit"], [type="button"], [type="checkbox"], [name="resendUrl"], #input-resend-pin-url')
-          })
-          .first();
-        await pinInput.waitFor({ state: 'visible', timeout: 15_000 });
-        logger.info(`[LoginPage] [${username}] Found visible input on page.`);
+      // Step 3: Immediately and directly find input section of OTP on the page
+      logger.info(`[LoginPage] [${username}] Directly finding OTP/PIN input section...`);
+      let pinInput = await this.findOtpPinInput(8000);
+      if (pinInput) {
+        logger.info(`[LoginPage] [${username}] Directly located OTP/PIN input section on page.`);
+      } else {
+        logger.warn(`[LoginPage] [${username}] OTP/PIN input not immediately found; will continue monitoring while awaiting OTP.`);
       }
 
-      // Step 4: Wait for user to input 6-digit OTP in UI (3-minute window)
-      logger.info(`[LoginPage] [${username}] Waiting for user to enter 6-digit OTP in UI (up to 3 minutes)...`);
-      const otpCode = await otpPromise;
-      logger.info(`[LoginPage] [${username}] Received 6-digit OTP (${otpCode}) from UI. Filling input...`);
+      // Step 4: Wait for user to enter OTP (up to 10 minutes)
+      // When user enters OTP, immediately trigger submit without waiting for default timeout
+      logger.info(`[LoginPage] [${username}] Waiting for OTP code (up to 10 minutes). Once entered, submit will trigger directly...`);
 
-      // Step 5: Fill the 6-digit OTP
-      await pinInput.click();
-      await pinInput.fill(otpCode.trim());
-      await this.page.keyboard.press('Tab');
-      await this.page.waitForTimeout(400);
+      let pollActive = true;
+      const pageDirectWatcher = new Promise<{ source: 'page_feed' | 'page_filled'; code?: string }>((resolve) => {
+        const interval = setInterval(async () => {
+          if (!pollActive) {
+            clearInterval(interval);
+            return;
+          }
+          try {
+            const currentUrl = this.page.url();
+            if (currentUrl.includes('/feed')) {
+              clearInterval(interval);
+              pollActive = false;
+              resolve({ source: 'page_feed' });
+              return;
+            }
 
-      // Step 6: Click the submit button:
-      // <button class="form__submit form__submit--stretch" id="two-step-submit-button" aria-label="Submit code" type="submit">Submit</button>
-      const submitButton = this.page.locator([
-        'button:visible#two-step-submit-button',
-        '#two-step-submit-button:visible',
-        'button:visible[type="submit"]',
-        '.form__action button[type="submit"]:visible',
-        'button:visible:has-text("Submit")',
-        'button.form__submit:visible'
-      ].join(', ')).first();
+            if (!pinInput) {
+              pinInput = await this.findOtpPinInput(300);
+            }
 
-      await submitButton.waitFor({ state: 'visible', timeout: 10_000 });
-      logger.info(`[LoginPage] [${username}] Clicking #two-step-submit-button to submit SMS code...`);
-      await submitButton.click();
+            if (pinInput) {
+              const val = await pinInput.inputValue().catch(() => '');
+              if (val && val.trim().length >= 6) {
+                clearInterval(interval);
+                pollActive = false;
+                resolve({ source: 'page_filled', code: val.trim() });
+                return;
+              }
+            }
+          } catch {}
+        }, 600);
+      });
 
-      // Step 7: Wait for feed redirect
+      const outcome = await Promise.race([
+        otpPromise.then((code) => ({ source: 'ui' as const, code })),
+        pageDirectWatcher,
+      ]).finally(() => {
+        pollActive = false;
+      });
+
+      if (outcome.source === 'page_feed') {
+        logger.info(`[LoginPage] [${username}] Direct redirect to feed detected! Verification succeeded.`);
+        OtpChallengeService.clearChallenge(username);
+        return;
+      }
+
+      if (outcome.source === 'ui') {
+        const otpCode = outcome.code;
+        logger.info(`[LoginPage] [${username}] Received OTP (${otpCode}) from UI. Directly filling input and triggering submit...`);
+
+        if (!pinInput) {
+          pinInput = await this.findOtpPinInput(6000);
+        }
+
+        if (!pinInput) {
+          throw new AuthenticationError('Could not locate OTP input field to fill verification code.');
+        }
+
+        await pinInput.click();
+        await pinInput.fill(otpCode.trim());
+        await this.page.keyboard.press('Tab');
+        await this.page.waitForTimeout(200);
+
+        // Step 6: Trigger submit directly!
+        await this.triggerOtpSubmit(pinInput, username);
+      } else if (outcome.source === 'page_filled') {
+        logger.info(`[LoginPage] [${username}] OTP detected as filled directly on page. Triggering submit directly...`);
+        if (!pinInput) {
+          pinInput = await this.findOtpPinInput(3000);
+        }
+        if (pinInput) {
+          await this.triggerOtpSubmit(pinInput, username);
+        }
+      }
+
+      // Step 7: Wait for post-verification redirect to feed
       logger.info(`[LoginPage] [${username}] Waiting for post-verification redirect to feed...`);
       try {
         await this.page.waitForURL('**/feed/**', { timeout: 60_000 });
         logger.info(`[LoginPage] [${username}] Successfully redirected to feed after SMS verification!`);
         OtpChallengeService.clearChallenge(username);
       } catch {
-        // Check if on feed regardless of exact URL
         const currentUrl = this.page.url();
         if (currentUrl.includes('/feed')) {
           logger.info(`[LoginPage] [${username}] On feed URL (${currentUrl}). Verification succeeded.`);
@@ -303,7 +474,6 @@ export class LoginPage {
           return;
         }
 
-        // Check if error message is displayed on challenge page
         const errorMsg = await this.page
           .locator('.form__message--error, [role="alert"], .error-message, .alert-content')
           .first()
