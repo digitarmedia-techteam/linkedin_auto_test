@@ -29,17 +29,13 @@ RUN npm ci || npm install
 # Install Playwright Chromium browser binary and its system libraries
 RUN npx playwright install --with-deps chromium
 
-# Create directories and grant appropriate permissions for UID 1001
-RUN mkdir -p /app/public/uploads /app/chat-uploads /tmp/logs /ms-playwright \
+# Create browser directory and grant appropriate permissions for UID 1001
+RUN mkdir -p /ms-playwright \
     && chown -R appuser:appuser /app /ms-playwright \
     && chmod -R 755 /ms-playwright
 
 # Copy project source code
 COPY --chown=appuser:appuser . .
-
-# Ensure storage directories exist with proper ownership
-RUN mkdir -p /app/public/uploads /app/chat-uploads \
-    && chown -R appuser:appuser /app/public/uploads /app/chat-uploads
 
 # Switch to non-root user (UID 1001)
 USER 1001
