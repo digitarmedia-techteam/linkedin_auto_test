@@ -310,63 +310,60 @@ export class LoginPage {
    */
   async findOtpPinInput(timeoutMs = 6000): Promise<Locator | null> {
     const PIN_SELECTORS = [
-      'input:visible#input__phone_verification_pin',
-      'input:visible#input__email_verification_pin',
-      'input:visible#two-step-verification-code',
-      'input:visible[name="pin"]',
-      'input:visible[name="verificationCode"]',
-      'input:visible[name="code"]',
-      'input:visible[name="security-code"]',
-      'input:visible#security-code',
-      'input:visible[id*="pin" i]',
-      'input:visible[id*="otp" i]',
-      'input:visible[id*="code" i]',
-      'input:visible[id*="verification" i]',
-      'input:visible[type="tel"]',
-      'input:visible[inputmode="numeric"]',
-      'input:visible[autocomplete*="code"]',
-      'input:visible[placeholder*="code" i]',
-      'input:visible[placeholder*="pin" i]',
-      'input:visible[aria-label*="code" i]',
-      'input:visible[aria-label*="pin" i]',
-      'input:visible[aria-label*="SMS" i]',
-      'input:visible[aria-label*="verification" i]',
-      'input:visible.form__input--text',
-      'input:visible[type="text"]:not([name="resendUrl"]):not(#input-resend-pin-url):not([type="hidden"])',
+      '#input__phone_verification_pin',
+      'input#input__phone_verification_pin',
+      'input[name="pin"]',
+      'input.input_verification_pin',
+      'input[aria-describedby="phone-pin-error"]',
+      'input[validation="pin"]',
+      'input[aria-label="Please enter the code here"]',
+      '#input__email_verification_pin',
+      'input#input__email_verification_pin',
+      '#two-step-verification-code',
+      'input#two-step-verification-code',
+      'input[name="verificationCode"]',
+      'input[name="code"]',
+      'input[name="security-code"]',
+      '#security-code',
+      'input[id*="pin" i]',
+      'input[id*="otp" i]',
+      'input[id*="code" i]',
+      'input[id*="verification" i]',
+      'input[type="tel"]',
+      'input[inputmode="numeric"]',
+      'input[autocomplete*="code"]',
+      'input[placeholder*="code" i]',
+      'input[placeholder*="pin" i]',
+      'input[aria-label*="code" i]',
+      'input[aria-label*="pin" i]',
+      'input[aria-label*="SMS" i]',
+      'input[aria-label*="verification" i]',
+      'input.form__input--text',
     ];
 
     const startTime = Date.now();
     while (Date.now() - startTime < timeoutMs) {
-      // 1. Direct combined selector on main page
-      const primary = this.page.locator(PIN_SELECTORS.join(', ')).first();
-      try {
-        if (await primary.isVisible({ timeout: 250 })) {
-          return primary;
-        }
-      } catch {}
-
-      // 2. Generic visible text/tel/number input excluding buttons/hidden
-      try {
-        const generic = this.page
-          .locator('input:visible')
-          .filter({
-            hasNot: this.page.locator('[type="hidden"], [type="submit"], [type="button"], [type="checkbox"], [name="resendUrl"], #input-resend-pin-url'),
-          })
-          .first();
-        if (await generic.isVisible({ timeout: 250 })) {
-          return generic;
-        }
-      } catch {}
-
-      // 3. Search within iframes (if LinkedIn renders challenge inside an iframe)
-      for (const frame of this.page.frames()) {
-        if (frame === this.page.mainFrame()) continue;
+      // 1. Check each specific selector on main page
+      for (const sel of PIN_SELECTORS) {
         try {
-          const frameInput = frame.locator(PIN_SELECTORS.join(', ')).first();
-          if (await frameInput.isVisible({ timeout: 200 })) {
-            return frameInput;
+          const loc = this.page.locator(sel).first();
+          if (await loc.isVisible({ timeout: 100 }).catch(() => false)) {
+            return loc;
           }
         } catch {}
+      }
+
+      // 2. Search within all frames (if LinkedIn renders challenge inside an iframe)
+      for (const frame of this.page.frames()) {
+        if (frame === this.page.mainFrame()) continue;
+        for (const sel of PIN_SELECTORS) {
+          try {
+            const frameInput = frame.locator(sel).first();
+            if (await frameInput.isVisible({ timeout: 100 }).catch(() => false)) {
+              return frameInput;
+            }
+          } catch {}
+        }
       }
 
       await this.page.waitForTimeout(250);
@@ -380,34 +377,37 @@ export class LoginPage {
    */
   async findOtpSubmitButton(): Promise<Locator | null> {
     const SUBMIT_SELECTORS = [
-      'button:visible#two-step-submit-button',
-      '#two-step-submit-button:visible',
-      'button:visible[type="submit"]',
-      'button[type="submit"]:visible',
-      '.form__action button[type="submit"]:visible',
-      'button:visible:has-text("Submit")',
-      'button:visible:has-text("Verify")',
-      'button:visible:has-text("Continue")',
-      'button.form__submit:visible',
-      'input:visible[type="submit"]',
+      '#two-step-submit-button',
+      'button#two-step-submit-button',
+      'button[type="submit"]',
+      'input[type="submit"]',
+      '.form__action button[type="submit"]',
+      'button.form__submit',
+      'button:has-text("Submit")',
+      'button:has-text("Verify")',
+      'button:has-text("Continue")',
     ];
 
-    const mainBtn = this.page.locator(SUBMIT_SELECTORS.join(', ')).first();
-    try {
-      if (await mainBtn.isVisible({ timeout: 500 })) {
-        return mainBtn;
-      }
-    } catch {}
+    for (const sel of SUBMIT_SELECTORS) {
+      try {
+        const btn = this.page.locator(sel).first();
+        if (await btn.isVisible({ timeout: 200 }).catch(() => false)) {
+          return btn;
+        }
+      } catch {}
+    }
 
     // Check frames
     for (const frame of this.page.frames()) {
       if (frame === this.page.mainFrame()) continue;
-      try {
-        const frameBtn = frame.locator(SUBMIT_SELECTORS.join(', ')).first();
-        if (await frameBtn.isVisible({ timeout: 200 })) {
-          return frameBtn;
-        }
-      } catch {}
+      for (const sel of SUBMIT_SELECTORS) {
+        try {
+          const frameBtn = frame.locator(sel).first();
+          if (await frameBtn.isVisible({ timeout: 150 }).catch(() => false)) {
+            return frameBtn;
+          }
+        } catch {}
+      }
     }
 
     return null;
@@ -467,33 +467,87 @@ export class LoginPage {
       }
     } catch {}
 
+    // Capture immediate diagnostic screenshot and log page text preview
+    const challengeShot = await this.captureDiagnosticScreenshot(`challenge-${username}`);
+    const pageText = await this.page.innerText('body').catch(() => '');
+    const cleanText = pageText.replace(/\s+/g, ' ').slice(0, 300);
+    logger.info(`[LoginPage] [${username}] Challenge page screenshot: ${challengeShot}. Text preview: "${cleanText}"`);
+
     logger.info(`[LoginPage] [${username}] Starting SMS verification handling. Registering OTP challenge immediately...`);
 
     // 10-minute timeout window (600,000 ms) - but triggers submit immediately upon OTP entry
     const OTP_TIMEOUT_MS = 600_000;
     const otpPromise = OtpChallengeService.requestOtp(username, userId, OTP_TIMEOUT_MS);
 
-    // Look for "Verify using SMS" button / link if presented
-    const tryAnotherWay = this.page.locator(
-      '#try-another-way, a#try-another-way, .try_another_way a, a:has-text("Verify using SMS"), button:has-text("Verify using SMS")'
-    ).first();
+    // Broad set of "Try another way" / "Verify using SMS" / "Send SMS" triggers
+    const TRY_SMS_SELECTORS = [
+      '#try-another-way',
+      'a#try-another-way',
+      'button#try-another-way',
+      'a:has-text("Verify using SMS")',
+      'button:has-text("Verify using SMS")',
+      'a:has-text("Send a code via SMS")',
+      'button:has-text("Send a code via SMS")',
+      'a:has-text("Send SMS")',
+      'button:has-text("Send SMS")',
+      'a:has-text("Text a code")',
+      'button:has-text("Text a code")',
+      'a:has-text("Try another way")',
+      'button:has-text("Try another way")',
+      'a:has-text("Send code")',
+      'button:has-text("Send code")',
+      'button[aria-label*="SMS" i]',
+      'button[aria-label*="another way" i]',
+      'a[aria-label*="another way" i]',
+      '[data-litms-control-urn*="try-another-way"]',
+      '[data-litms-control-urn*="sms"]',
+      '.try_another_way a',
+    ];
 
-    try {
-      if (this.page.url().includes('/feed')) {
-        logger.info(`[LoginPage] [${username}] Feed reached — skipping try-another-way search.`);
-        return;
+    let clickedTryAnother = false;
+    for (const sel of TRY_SMS_SELECTORS) {
+      if (this.page.url().includes('/feed')) break;
+      try {
+        const btn = this.page.locator(sel).first();
+        if (await btn.isVisible({ timeout: 350 }).catch(() => false)) {
+          logger.info(`[LoginPage] [${username}] Found SMS challenge trigger "${sel}". Clicking it now...`);
+          await btn.click();
+          await this.page.waitForLoadState('domcontentloaded').catch(() => {});
+          await this.page.waitForTimeout(1000);
+          clickedTryAnother = true;
+          break;
+        }
+      } catch (e) {
+        logger.warn(`[LoginPage] [${username}] Clicking ${sel}: ${(e as Error).message}`);
       }
-      if (await tryAnotherWay.isVisible({ timeout: 2500 })) {
-        logger.info(`[LoginPage] [${username}] Found "Verify using SMS" button. Clicking it now...`);
-        await tryAnotherWay.click();
-        await this.page.waitForLoadState('domcontentloaded').catch(() => {});
-        await this.page.waitForTimeout(1000);
-      } else {
-        logger.info(`[LoginPage] [${username}] "Verify using SMS" button not found or already on SMS challenge screen.`);
-      }
-    } catch (e) {
-      logger.warn(`[LoginPage] [${username}] Checking try-another-way: ${(e as Error).message}`);
     }
+
+    if (!clickedTryAnother) {
+      logger.info(`[LoginPage] [${username}] "Verify using SMS" button not found or already on SMS challenge screen.`);
+    }
+
+    // Check if an SMS verification radio option needs to be selected (e.g. choose method screen)
+    try {
+      if (!this.page.url().includes('/feed')) {
+        const smsOption = this.page.locator(
+          'input[type="radio"][value*="SMS" i], input[type="radio"][value*="phone" i], label:has-text("SMS"), label:has-text("text message"), label:has-text("phone")'
+        ).first();
+        if (await smsOption.isVisible({ timeout: 500 }).catch(() => false)) {
+          logger.info(`[LoginPage] [${username}] Found SMS radio option. Selecting it...`);
+          await smsOption.click();
+          await this.page.waitForTimeout(300);
+          const continueBtn = this.page.locator(
+            'button:has-text("Continue"), button:has-text("Next"), button:has-text("Send code"), button[type="submit"]'
+          ).first();
+          if (await continueBtn.isVisible({ timeout: 500 }).catch(() => false)) {
+            logger.info(`[LoginPage] [${username}] Clicking Continue after selecting SMS option...`);
+            await continueBtn.click();
+            await this.page.waitForLoadState('domcontentloaded').catch(() => {});
+            await this.page.waitForTimeout(1000);
+          }
+        }
+      }
+    } catch {}
 
     if (this.page.url().includes('/feed')) {
       logger.info(`[LoginPage] [${username}] Redirected to feed — skipping OTP input search.`);
