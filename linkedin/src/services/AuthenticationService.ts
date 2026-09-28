@@ -141,6 +141,12 @@ export class AuthenticationService {
       });
     }
 
+    if (!config.username || !config.password) {
+      throw new AuthenticationError(
+        'No active LinkedIn test users found in database and no credentials configured in environment variables.',
+      );
+    }
+
     return {
       id: 0,
       username: config.username,
@@ -300,6 +306,10 @@ export class AuthenticationService {
     await this.pageReady;
     const loginUser = username ?? config.username;
     const loginPass = password ?? config.password;
+
+    if (!loginUser || !loginPass) {
+      throw new AuthenticationError('No login credentials provided. Please specify username and password.');
+    }
 
     logger.info('[AuthService] Starting login flow.', { username: loginUser });
     await this.loginPage.open();

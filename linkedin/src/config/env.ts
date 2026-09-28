@@ -7,14 +7,13 @@ export interface DatabaseConfig {
   database: string;
   user: string;
   password?: string;
-  url?: string;
 }
 
 export interface AppConfig {
   baseUrl: string;
-  username: string;
+  username?: string;
   /** Password is stored but NEVER logged. */
-  password: string;
+  password?: string;
   headless: boolean;
   timeout: number;
   networkingAdapter: 'mock' | 'official';
@@ -50,14 +49,14 @@ function parseAdapter(value: string | undefined): 'mock' | 'official' {
 }
 
 function buildConfig(): AppConfig {
-  const username = requireEnv('TEST_USERNAME');
-  const password = requireEnv('TEST_PASSWORD');
+  const username = process.env['TEST_USERNAME'] || undefined;
+  const password = process.env['TEST_PASSWORD'] || undefined;
 
   return {
-    baseUrl: process.env['APP_BASE_URL'] ?? 'http://localhost:3000',
+    baseUrl: process.env['APP_BASE_URL'] ?? 'https://www.linkedin.com',
     username,
     password,
-    headless: parseBoolean(process.env['HEADLESS'], false),
+    headless: parseBoolean(process.env['HEADLESS'], true),
     timeout: parsePositiveInt(process.env['DEFAULT_TIMEOUT'], 30_000),
     networkingAdapter: parseAdapter(process.env['NETWORKING_ADAPTER']),
     db: {
@@ -66,7 +65,6 @@ function buildConfig(): AppConfig {
       database: process.env['DB_NAME'] ?? 'linkedin_db',
       user: process.env['DB_USER'] ?? 'root',
       password: process.env['DB_PASSWORD'] ?? '',
-      url: process.env['DATABASE_URL'],
     },
   };
 }

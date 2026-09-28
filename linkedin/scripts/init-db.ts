@@ -33,19 +33,23 @@ async function main(): Promise<void> {
     }
   }
 
-  logger.info('[init-db] Seeding default user from environment variables...');
-  await TestUserRepository.upsertUser({
-    username: config.username,
-    password: config.password,
-    login_try: 1,
-    status: 'active',
-    storage_state_json: existingStorageState ? JSON.stringify(existingStorageState) : null,
-    meta_data: {
-      role: 'primary_test_user',
-      source: 'env_seed',
-      note: 'Auto-seeded primary account with login_try = 1',
-    },
-  });
+  if (config.username && config.password) {
+    logger.info('[init-db] Seeding default user from environment variables...');
+    await TestUserRepository.upsertUser({
+      username: config.username,
+      password: config.password,
+      login_try: 1,
+      status: 'active',
+      storage_state_json: existingStorageState ? JSON.stringify(existingStorageState) : null,
+      meta_data: {
+        role: 'primary_test_user',
+        source: 'env_seed',
+        note: 'Auto-seeded primary account with login_try = 1',
+      },
+    });
+  } else {
+    logger.info('[init-db] No default user credentials configured in environment; skipping auto-seed.');
+  }
 
   const usersToLogin = await TestUserRepository.getUsersToLogin();
   logger.info(`[init-db] Table is ready! Total users with login_try = 1: ${String(usersToLogin.length)}`);
