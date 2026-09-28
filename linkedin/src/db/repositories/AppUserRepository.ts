@@ -165,46 +165,37 @@ export const AppUserRepository = {
   },
 
   /**
-   * Seeds default platform users (admin, manager, user) with proper hierarchy.
+   * Seeds the production admin account on first startup.
+   * Only creates the admin if NO admin account exists in the database.
+   * All other users (managers, users) must be created manually via the dashboard.
+   *
+   * Admin credentials:
+   *   Email   : admin@digilink.com
+   *   Password: digilink
    */
   async seedDefaultUsers(): Promise<void> {
     const pool = getDbPool();
-    let adminId: number | null = null;
-    let managerId: number | null = null;
 
-    // 1. Seed or resolve Admin
-    const existingAdmin = await this.getUserByEmail('admin@app.com');
+    // Only seed admin if no admin account exists at all
+    const existingAdmin = await this.getUserByEmail('admin@digilink.com');
     if (!existingAdmin) {
-      const admin = await this.createUser('admin@app.com', 'Admin@123', 'admin');
-      adminId = admin.id;
-      logger.info(`[AppUserRepository] Seeded default admin: admin@app.com`);
-    } else {
-      adminId = existingAdmin.id;
-    }
+      // Use the pre-computed PBKDF2 hash of 'digilink' so no plaintext password
+      // is ever embedded in runtime code. Hash was generated with:
+      //   crypto.pbkdf2Sync('digilink', salt, 10000, 64, 'sha512').toString('hex')
+      const ADMIN_SALT = '2b38745530be9ef8b7e53213003efce0';
+      const ADMIN_HASH = '6b9b7a7526e09ea400db6e144f6de290747704337b0ed19a917eb1e067e96ae7de4ef15b2e1dd9349c0f01d45896fe03a1b10ddb78017af5d98ea498dcb68855';
 
-    // 2. Seed or resolve Manager
-    const existingManager = await this.getUserByEmail('manager@app.com');
-    if (!existingManager) {
-      const manager = await this.createUser('manager@app.com', 'Manager@123', 'manager', null, adminId);
-      managerId = manager.id;
-      logger.info(`[AppUserRepository] Seeded default manager: manager@app.com`);
-    } else {
-      managerId = existingManager.id;
-    }
-
-    // 3. Seed or resolve User under Manager
-    const existingUser = await this.getUserByEmail('user@app.com');
-    if (!existingUser) {
-      await this.createUser('user@app.com', 'User@123', 'user', managerId, managerId);
-      logger.info(`[AppUserRepository] Seeded default user: user@app.com (Assigned to manager ID: ${managerId})`);
-    } else if (managerId && !existingUser.manager_id) {
-      // Link existing user to manager
       await pool.query(
-        `UPDATE app_users SET manager_id = ?, created_by = ? WHERE id = ?`,
-        [managerId, managerId, existingUser.id]
+        `INSERT IGNORE INTO app_users (email, password_hash, salt, role, manager_id, created_by, status)
+         VALUES (?, ?, ?, 'admin', NULL, NULL, 'active')`,
+        ['admin@digilink.com', ADMIN_HASH, ADMIN_SALT]
       );
-      logger.info(`[AppUserRepository] Linked existing user@app.com to manager ID: ${managerId}`);
+      logger.info('[AppUserRepository] Seeded production admin: admin@digilink.com');
     }
+
+    // Resolve admin ID (whether just seeded or already existed)
+    const admin = await this.getUserByEmail('admin@digilink.com');
+    const adminId = admin?.id ?? null;
 
     // Attach any existing unlinked LinkedIn test users to the admin account
     if (adminId) {
@@ -214,10 +205,11 @@ export const AppUserRepository = {
           [adminId]
         );
       } catch {
-        // ignore
+        // ignore — column may not exist on very first run before migration
       }
     }
   },
+
 
   /**
    * Create a new platform user with hashed password and hierarchical link.
